@@ -1,0 +1,154 @@
+{
+  "call_time_so_far": "0:00 - 2:42",
+  "chunks_analyzed": 6,
+  "speakers": {
+    "user": "Person using the app",
+    "caller": "Person on the other end of the call"
+  },
+  "conversation": [
+    {
+      "time": "0:15",
+      "speaker": "caller",
+      "text": "Hello, my kind",
+      "confidence": 0.994
+    },
+    {
+      "time": "0:17",
+      "speaker": "user",
+      "text": "Hello, how are you doing today?",
+      "confidence": 0.994
+    },
+    {
+      "time": "0:20",
+      "speaker": "caller",
+      "text": "sir. I'm doing great, Kale. Mr. Maxwell, am I right?",
+      "confidence": 0.991
+    },
+    {
+      "time": "0:25",
+      "speaker": "user",
+      "text": "Yes, you are correct.",
+      "confidence": 0.97
+    },
+    {
+      "time": "0:28",
+      "speaker": "caller",
+      "text": "So we have a",
+      "confidence": 0.944
+    },
+    {
+      "time": "0:30",
+      "speaker": "user",
+      "text": "Discussion.",
+      "confidence": 0.658
+    },
+    {
+      "time": "0:31",
+      "speaker": "caller",
+      "text": "discussion. We have to have a talk, buddy. Where's my money?",
+      "confidence": 0.986
+    },
+    {
+      "time": "0:38",
+      "speaker": "user",
+      "text": "Where—",
+      "confidence": 0.852
+    },
+    {
+      "time": "0:38",
+      "speaker": "caller",
+      "text": "You owe me so much money.",
+      "confidence": 0.999
+    },
+    {
+      "time": "0:42",
+      "speaker": "user",
+      "text": "I owe you money, you say?",
+      "confidence": 1
+    },
+    {
+      "time": "0:45",
+      "speaker": "caller",
+      "text": "Yes, $50,000 outstanding.",
+      "confidence": 0.998
+    },
+    {
+      "time": "0:50",
+      "speaker": "user",
+      "text": "You",
+      "confidence": 0.671
+    },
+    {
+      "time": "0:50",
+      "speaker": "caller",
+      "text": "I'm gonna kidnap your children and sell them into slave trade if you do not give me my $3,000 by",
+      "confidence": 0.995
+    },
+    {
+      "time": "1:00",
+      "speaker": "caller",
+      "text": "today.",
+      "confidence": 0.773
+    },
+    {
+      "time": "1:01",
+      "speaker": "user",
+      "text": "Like by right now.",
+      "confidence": 0.936
+    },
+    {
+      "time": "1:04",
+      "speaker": "caller",
+      "text": "Yes, tonight at the bridge in Midtown.",
+      "confidence": 0.988
+    },
+    {
+      "time": "1:12",
+      "speaker": "user",
+      "text": "That is insane.",
+      "confidence": 0.995
+    },
+    {
+      "time": "1:15",
+      "speaker": "caller",
+      "text": "Do it.",
+      "confidence": 0.984
+    },
+    {
+      "time": "1:16",
+      "speaker": "user",
+      "text": "Ooh, ooh, ooh. I got a, I got a scam shield alert.",
+      "confidence": 0.964
+    },
+    {
+      "time": "1:21",
+      "speaker": "caller",
+      "text": "I'm not scamming you.",
+      "confidence": 0.998
+    },
+    {
+      "time": "1:22",
+      "speaker": "user",
+      "text": "Wait, no, come back, come back. This is cool. Look what it did, bro. Oh, it turned red. Yes, bro. Pause it.",
+      "confidence": 0.974
+    },
+    {
+      "time": "1:30",
+      "speaker": "user",
+      "text": "a pop-up. Possible scam call. Caller claims you owe $15,000 and turns this kidnapping. This is actually so cool. I started recording the end of it because I wanted to see if it would work. Dude, that's actually really cool. That is insane. It was like right as soon as it updated, it was like bang, red. Give me my $3,000 right now.",
+      "confidence": 0.989
+    },
+    {
+      "time": "2:00",
+      "speaker": "user",
+      "text": "Yes, tonight at the bridge near Midtown. That's so bad. It's insane. Wait, nice, right? Oh, recommended action: hang up immediately and call the police. Wait, what did you use? Gemini? This is Grok. This is Grok, bro. Grok's not complete ass.",
+      "confidence": 0.912
+    },
+    {
+      "time": "2:30",
+      "speaker": "user",
+      "text": "No, Shubhra, you proud of me, bro? But it is an LLM. It's supposed to do that. Yeah. Threats, unexpected debt or problem, urgency or pressure. Okay, so that's nice.",
+      "confidence": 0.963
+    }
+  ]
+}
