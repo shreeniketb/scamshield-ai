@@ -1,43 +1,8 @@
 {
-  "scam_likelihood": 95,
-  "risk_level": "high",
+  "scam_likelihood": 0,
+  "risk_level": "low",
   "enough_information": true,
-  "summary": "Caller demands $3,000 tonight while threatening to kidnap and sell the user's children.",
-  "reasons": [
-    {
-      "category": "threats",
-      "explanation": "Extreme threat of violence and child trafficking to extort money.",
-      "evidence": [
-        {
-          "time": "0:50",
-          "quote": "I'm gonna kidnap your children and sell them into slave trade if you do not give me my $3,000 by"
-        },
-        {
-          "time": "1:00",
-          "quote": "today."
-        }
-      ]
-    },
-    {
-      "category": "urgency_or_pressure",
-      "explanation": "Insists on immediate payment tonight at a specific location.",
-      "evidence": [
-        {
-          "time": "1:04",
-          "quote": "Yes, tonight at the bridge in Midtown."
-        }
-      ]
-    },
-    {
-      "category": "unexpected_debt_or_problem",
-      "explanation": "Claims user owes $50,000 with no prior context.",
-      "evidence": [
-        {
-          "time": "0:45",
-          "quote": "Yes, $50,000 outstanding."
-        }
-      ]
-    }
-  ],
-  "recommended_action": "Hang up immediately and call the police."
+  "summary": "This is a technical discussion about building the ScamShield app with AI tools and web frameworks.",
+  "reasons": [],
+  "recommended_action": "Continue the call."
 }

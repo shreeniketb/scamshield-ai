@@ -1,154 +1,52 @@
 {
-  "call_time_so_far": "0:00 - 2:42",
-  "chunks_analyzed": 6,
+  "call_time_so_far": "0:00 - 3:30",
+  "chunks_analyzed": 7,
   "speakers": {
     "user": "Person using the app",
     "caller": "Person on the other end of the call"
   },
   "conversation": [
     {
-      "time": "0:15",
-      "speaker": "caller",
-      "text": "Hello, my kind",
-      "confidence": 0.994
-    },
-    {
-      "time": "0:17",
+      "time": "0:01",
       "speaker": "user",
-      "text": "Hello, how are you doing today?",
-      "confidence": 0.994
-    },
-    {
-      "time": "0:20",
-      "speaker": "caller",
-      "text": "sir. I'm doing great, Kale. Mr. Maxwell, am I right?",
-      "confidence": 0.991
-    },
-    {
-      "time": "0:25",
-      "speaker": "user",
-      "text": "Yes, you are correct.",
-      "confidence": 0.97
-    },
-    {
-      "time": "0:28",
-      "speaker": "caller",
-      "text": "So we have a",
-      "confidence": 0.944
+      "text": "That— well, that's like, I mean, there's nothing wrong with that, but it's like they'll look at that, they'll be like, oh yeah, they just vibe coded it and left it. No, but they know everyone's vibe code. Yeah, of course, but like, it's like we didn't even— we didn't do much past that. It's like we vibe, or at least as far as the UI/UX, we just vibe coded that part and left it. Of course everyone's vibe coding, but like, okay, wait, wait, turn it around. Like, this is what we have right now.",
+      "confidence": 0.962
     },
     {
       "time": "0:30",
       "speaker": "user",
-      "text": "Discussion.",
-      "confidence": 0.658
-    },
-    {
-      "time": "0:31",
-      "speaker": "caller",
-      "text": "discussion. We have to have a talk, buddy. Where's my money?",
-      "confidence": 0.986
-    },
-    {
-      "time": "0:38",
-      "speaker": "user",
-      "text": "Where—",
-      "confidence": 0.852
-    },
-    {
-      "time": "0:38",
-      "speaker": "caller",
-      "text": "You owe me so much money.",
-      "confidence": 0.999
-    },
-    {
-      "time": "0:42",
-      "speaker": "user",
-      "text": "I owe you money, you say?",
-      "confidence": 1
-    },
-    {
-      "time": "0:45",
-      "speaker": "caller",
-      "text": "Yes, $50,000 outstanding.",
-      "confidence": 0.998
-    },
-    {
-      "time": "0:50",
-      "speaker": "user",
-      "text": "You",
-      "confidence": 0.671
-    },
-    {
-      "time": "0:50",
-      "speaker": "caller",
-      "text": "I'm gonna kidnap your children and sell them into slave trade if you do not give me my $3,000 by",
-      "confidence": 0.995
+      "text": "Okay, obviously this, this is not gonna show up. Yeah, this is— that's not gonna show up. No, this is like— I mean, bro, they're— the user's not putting in an API. This is like the only thing that's showing up. This is what ideally, yes, we would just want this, something like this to show up. And this looks pretty good except for like, just this looks a bit AI, but the, the rest of it is pretty— I mean, it's a small thing. Yeah, no, it's not bad.",
+      "confidence": 0.991
     },
     {
       "time": "1:00",
-      "speaker": "caller",
-      "text": "today.",
-      "confidence": 0.773
-    },
-    {
-      "time": "1:01",
       "speaker": "user",
-      "text": "Like by right now.",
-      "confidence": 0.936
-    },
-    {
-      "time": "1:04",
-      "speaker": "caller",
-      "text": "Yes, tonight at the bridge in Midtown.",
-      "confidence": 0.988
-    },
-    {
-      "time": "1:12",
-      "speaker": "user",
-      "text": "That is insane.",
-      "confidence": 0.995
-    },
-    {
-      "time": "1:15",
-      "speaker": "caller",
-      "text": "Do it.",
-      "confidence": 0.984
-    },
-    {
-      "time": "1:16",
-      "speaker": "user",
-      "text": "Ooh, ooh, ooh. I got a, I got a scam shield alert.",
-      "confidence": 0.964
-    },
-    {
-      "time": "1:21",
-      "speaker": "caller",
-      "text": "I'm not scamming you.",
-      "confidence": 0.998
-    },
-    {
-      "time": "1:22",
-      "speaker": "user",
-      "text": "Wait, no, come back, come back. This is cool. Look what it did, bro. Oh, it turned red. Yes, bro. Pause it.",
-      "confidence": 0.974
+      "text": "But it looks live coded and you're going to fix that. Ideally, so like this is just sending data to Groq and then Groq sends data to this to output it. And so what we want to end up doing, I think, is this sends data to Groq and to his thing. And then we both send data to you instead of this. And then your thing is a popup and a dashboard that looks mighty fantastic.",
+      "confidence": 0.991
     },
     {
       "time": "1:30",
       "speaker": "user",
-      "text": "a pop-up. Possible scam call. Caller claims you owe $15,000 and turns this kidnapping. This is actually so cool. I started recording the end of it because I wanted to see if it would work. Dude, that's actually really cool. That is insane. It was like right as soon as it updated, it was like bang, red. Give me my $3,000 right now.",
-      "confidence": 0.989
+      "text": "Fantastic. I'm feeling the pressure. You're feeling the pressure? It's okay, bro. There's no— we have all day tomorrow. This is just the beginning. You've been at this for like 6 hours. I'm sure AI is crazy. Well then,",
+      "confidence": 0.904
     },
     {
-      "time": "2:00",
+      "time": "2:01",
       "speaker": "user",
-      "text": "Yes, tonight at the bridge near Midtown. That's so bad. It's insane. Wait, nice, right? Oh, recommended action: hang up immediately and call the police. Wait, what did you use? Gemini? This is Grok. This is Grok, bro. Grok's not complete ass.",
-      "confidence": 0.912
+      "text": "ScamShield AI. Let's just call it ScamShield. We don't need the AI. ScamShield.tech. Oh, we get a free domain with that. ScamShield.tech. A domain for what, a website? The tech. That's, that's one of the challenges, sponsored challenges. You just got to use their domain and then in the— in a web app. Yeah, we're not doing that. I am doing a web app. How is it going to work with",
+      "confidence": 0.987
     },
     {
       "time": "2:30",
       "speaker": "user",
-      "text": "No, Shubhra, you proud of me, bro? But it is an LLM. It's supposed to do that. Yeah. Threats, unexpected debt or problem, urgency or pressure. Okay, so that's nice.",
-      "confidence": 0.963
+      "text": "this? You just said it can't. No, it can't. It won't work with Streamlit. Oh, if I— if it does Next.js, it works. Is this true? Can you confirm if this is true? What is true? Can he use a web app to— can, can the data I sent him— but like, a web app can't have the popup though. I don't, I don't know. He has to figure",
+      "confidence": 0.975
+    },
+    {
+      "time": "3:04",
+      "speaker": "user",
+      "text": "This thing I'm saying like this, no, but that's not part of the web app, that's part of your system. Well, what we want is that my system just sends something to your system and your system pops it up, I think. Is that how it is? Let me ask Claude after I ask— finish asking Claude what I was going to before because I never finished.",
+      "confidence": 0.98
     }
   ]
 }

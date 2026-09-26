@@ -27,3 +27,5 @@ C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\refint\Sca
 C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.pdb
 C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.genruntimeconfig.cache
 C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ref\ScamDetector.dll
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\CallMonitorWindow.baml
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\CallMonitorWindow.g.cs

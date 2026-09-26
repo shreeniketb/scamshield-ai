@@ -52,18 +52,25 @@
                       Checked="GrokKey_Changed" Unchecked="GrokKey_Changed"/>
         </Grid>
 
-        <!-- Buttons -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal"
-                    HorizontalAlignment="Center" Margin="0,0,0,15">
-            <Button x:Name="BtnRecord" Content="🎤 Start Recording"
-                    Width="160" Height="40" Click="BtnRecord_Click"
-                    Background="#28A745" Foreground="White"
-                    FontWeight="Bold" Margin="0,0,10,0" Cursor="Hand"/>
-            <Button x:Name="BtnStop" Content="⏹ Stop"
-                    Width="160" Height="40" Click="BtnStop_Click"
-                    IsEnabled="False"
-                    Background="#DC3545" Foreground="White"
-                    FontWeight="Bold" Cursor="Hand"/>
+        <!-- Buttons + auto-record toggle -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,15">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button x:Name="BtnRecord" Content="🎤 Start Recording"
+                        Width="160" Height="40" Click="BtnRecord_Click"
+                        Background="#28A745" Foreground="White"
+                        FontWeight="Bold" Margin="0,0,10,0" Cursor="Hand"/>
+                <Button x:Name="BtnStop" Content="⏹ Stop"
+                        Width="160" Height="40" Click="BtnStop_Click"
+                        IsEnabled="False"
+                        Background="#DC3545" Foreground="White"
+                        FontWeight="Bold" Cursor="Hand"/>
+            </StackPanel>
+            <CheckBox x:Name="ChkAutoRecord"
+                      Content="Auto-record WhatsApp calls from unknown numbers"
+                      IsChecked="True"
+                      Foreground="#DCDCDC"
+                      HorizontalAlignment="Center"
+                      Margin="0,10,0,0"/>
         </StackPanel>
 
         <!-- Chunk progress -->
@@ -84,6 +91,15 @@
                            Foreground="#AAAAAA" FontSize="18" FontWeight="Bold"/>
                 <TextBlock x:Name="TxtRiskSummary"
                            Foreground="White" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                <!-- Recommended action: its own highlighted box so it stands out -->
+                <Border x:Name="ActionBox"
+                        Background="#2F2F33" BorderBrush="#555555" BorderThickness="4,0,0,0"
+                        CornerRadius="4" Padding="12,9" Margin="0,10,0,0"
+                        Visibility="Collapsed">
+                    <TextBlock x:Name="TxtRiskAction"
+                               Foreground="White" FontSize="15" FontWeight="DemiBold"
+                               TextWrapping="Wrap"/>
+                </Border>
                 <ScrollViewer MaxHeight="170" VerticalScrollBarVisibility="Auto" Margin="0,8,0,0">
                     <TextBlock x:Name="TxtRiskReasons"
                                Foreground="#DCDCDC" TextWrapping="Wrap" FontSize="12"/>
