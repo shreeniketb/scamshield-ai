@@ -15,42 +15,102 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- API Keys -->
-        <Grid Grid.Row="0" Margin="0,0,0,15">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="130"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <!-- API keys + SMS alert settings -->
+        <StackPanel Grid.Row="0">
+            <!-- API Keys -->
+            <Grid Margin="0,0,0,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="130"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="AssemblyAI Key:"
-                       Foreground="White" FontWeight="Bold"
-                       VerticalAlignment="Center" Margin="0,0,10,6"/>
-            <PasswordBox x:Name="TxtAssemblyKey" Grid.Row="0" Grid.Column="1"
-                         Padding="5" Margin="0,0,0,6"
-                         Background="#2D2D30" Foreground="White" BorderBrush="#555"
-                         PasswordChanged="AssemblyKey_Changed"/>
-            <CheckBox x:Name="ChkSaveAssembly" Grid.Row="0" Grid.Column="2"
-                      Content="Save" Foreground="#AAAAAA"
-                      VerticalAlignment="Center" Margin="10,0,0,6"
-                      Checked="AssemblyKey_Changed" Unchecked="AssemblyKey_Changed"/>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="AssemblyAI Key:"
+                           Foreground="White" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="0,0,10,6"/>
+                <PasswordBox x:Name="TxtAssemblyKey" Grid.Row="0" Grid.Column="1"
+                             Padding="5" Margin="0,0,0,6"
+                             Background="#2D2D30" Foreground="White" BorderBrush="#555"
+                             PasswordChanged="AssemblyKey_Changed"/>
+                <CheckBox x:Name="ChkSaveAssembly" Grid.Row="0" Grid.Column="2"
+                          Content="Save" Foreground="#AAAAAA"
+                          VerticalAlignment="Center" Margin="10,0,0,6"
+                          Checked="AssemblyKey_Changed" Unchecked="AssemblyKey_Changed"/>
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Grok (xAI) Key:"
-                       Foreground="White" FontWeight="Bold"
-                       VerticalAlignment="Center" Margin="0,0,10,0"/>
-            <PasswordBox x:Name="TxtGrokKey" Grid.Row="1" Grid.Column="1"
-                         Padding="5"
-                         Background="#2D2D30" Foreground="White" BorderBrush="#555"
-                         PasswordChanged="GrokKey_Changed"/>
-            <CheckBox x:Name="ChkSaveGrok" Grid.Row="1" Grid.Column="2"
-                      Content="Save" Foreground="#AAAAAA"
-                      VerticalAlignment="Center" Margin="10,0,0,0"
-                      Checked="GrokKey_Changed" Unchecked="GrokKey_Changed"/>
-        </Grid>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Grok (xAI) Key:"
+                           Foreground="White" FontWeight="Bold"
+                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <PasswordBox x:Name="TxtGrokKey" Grid.Row="1" Grid.Column="1"
+                             Padding="5"
+                             Background="#2D2D30" Foreground="White" BorderBrush="#555"
+                             PasswordChanged="GrokKey_Changed"/>
+                <CheckBox x:Name="ChkSaveGrok" Grid.Row="1" Grid.Column="2"
+                          Content="Save" Foreground="#AAAAAA"
+                          VerticalAlignment="Center" Margin="10,0,0,0"
+                          Checked="GrokKey_Changed" Unchecked="GrokKey_Changed"/>
+            </Grid>
+
+            <!-- SMS alerts -->
+            <Expander Header="SMS alerts (Twilio)" Foreground="White" Margin="0,0,0,15">
+                <Grid Margin="10,10,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="210"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,8">
+                        <CheckBox x:Name="ChkSmsAlerts"
+                                  Content="Text me by SMS when a call looks like a scam"
+                                  Foreground="#DCDCDC"/>
+                        <CheckBox x:Name="ChkAlertMedium"
+                                  Content="Also alert on MEDIUM risk (not just high)"
+                                  Foreground="#AAAAAA" Margin="20,6,0,0"/>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="1" Text="Your name (shown in alerts):" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,0,6"/>
+                    <TextBox x:Name="TxtAlertName" Grid.Row="1" Grid.Column="1" Padding="4" Margin="0,0,0,6"
+                             Background="#2D2D30" Foreground="White" BorderBrush="#555"/>
+
+                    <TextBlock Grid.Row="2" Text="Send SMS alerts to (phone number):" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,0,6"/>
+                    <TextBox x:Name="TxtAlertTo" Grid.Row="2" Grid.Column="1" Padding="4" Margin="0,0,0,6"
+                             Background="#2D2D30" Foreground="White" BorderBrush="#555"/>
+
+                    <TextBlock Grid.Row="3" Text="Twilio Account SID:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,0,6"/>
+                    <TextBox x:Name="TxtTwilioSid" Grid.Row="3" Grid.Column="1" Padding="4" Margin="0,0,0,6"
+                             Background="#2D2D30" Foreground="White" BorderBrush="#555"/>
+
+                    <TextBlock Grid.Row="4" Text="Twilio Auth Token:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,0,6"/>
+                    <PasswordBox x:Name="TxtTwilioToken" Grid.Row="4" Grid.Column="1" Padding="4" Margin="0,0,0,6"
+                                 Background="#2D2D30" Foreground="White" BorderBrush="#555"/>
+
+                    <TextBlock Grid.Row="5" Text="Twilio sender number:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,0,6"/>
+                    <TextBox x:Name="TxtTwilioFrom" Grid.Row="5" Grid.Column="1" Padding="4" Margin="0,0,0,6"
+                             Background="#2D2D30" Foreground="White" BorderBrush="#555"/>
+
+                    <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,4,0,0">
+                        <Button x:Name="BtnSaveAlerts" Content="Save" Width="90" Height="28"
+                                Click="BtnSaveAlerts_Click" Margin="0,0,8,0"/>
+                        <Button x:Name="BtnTestAlert" Content="Send test message" Width="140" Height="28"
+                                Click="BtnTestAlert_Click" Margin="0,0,12,0"/>
+                        <TextBlock x:Name="TxtAlertStatus" Foreground="#AAAAAA"
+                                   VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="330"/>
+                    </StackPanel>
+                </Grid>
+            </Expander>
+        </StackPanel>
 
         <!-- Buttons + auto-record toggle -->
         <StackPanel Grid.Row="1" Margin="0,0,0,15">
@@ -66,7 +126,7 @@
                         FontWeight="Bold" Cursor="Hand"/>
             </StackPanel>
             <CheckBox x:Name="ChkAutoRecord"
-                      Content="Auto-record WhatsApp calls from unknown numbers"
+                      Content="Auto-record calls from unknown numbers"
                       IsChecked="True"
                       Foreground="#DCDCDC"
                       HorizontalAlignment="Center"
@@ -88,10 +148,10 @@
             <StackPanel>
                 <TextBlock x:Name="TxtRiskLevel"
                            Text="Scam risk: not started"
-                           Foreground="#AAAAAA" FontSize="18" FontWeight="Bold"/>
+                           Foreground="#AAAAAA" FontSize="18" FontWeight="Bold"
+                           TextWrapping="Wrap"/>
                 <TextBlock x:Name="TxtRiskSummary"
                            Foreground="White" TextWrapping="Wrap" Margin="0,6,0,0"/>
-                <!-- Recommended action: its own highlighted box so it stands out -->
                 <Border x:Name="ActionBox"
                         Background="#2F2F33" BorderBrush="#555555" BorderThickness="4,0,0,0"
                         CornerRadius="4" Padding="12,9" Margin="0,10,0,0"

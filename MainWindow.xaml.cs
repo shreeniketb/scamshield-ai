@@ -26,10 +26,9 @@ namespace ScamDetector
         private const int TargetSampleRate = 16000;
 
         // ── Recording ─────────────────────────────────────────────────────────
-        // Mic = the USER. System audio (loopback) = the CALLER.
         private WaveInEvent?           _micIn;
         private WasapiLoopbackCapture? _loopbackIn;
-        private WasapiOut?             _silencePlayer;   // keeps loopback streaming during silence
+        private WasapiOut?             _silencePlayer;
         private WaveFileWriter?        _micWriter;
         private WaveFileWriter?        _loopbackWriter;
         private WaveFormat?            _micFormat;
@@ -47,38 +46,39 @@ namespace ScamDetector
         private DateTime                _chunkStart;
         private DateTime                _sessionStart;
 
-        // Copied from the key boxes when recording starts, because WPF
-        // controls can't be read from the background chunk timer thread.
         private string _assemblyKey = "";
         private string _grokKey     = "";
 
-        // ── Grok state ────────────────────────────────────────────────────────
-        private int           _grokRequestCounter;   // numbers each request
-        private int           _latestAppliedGrok;    // newest request whose answer is on screen
+        // ── Grok ──────────────────────────────────────────────────────────────
+        private int           _grokRequestCounter;
+        private int           _latestAppliedGrok;
         private ScamVerdict?  _latestVerdict;
-        private bool          _highAlertShown;       // popup only once per call
+        private bool          _highAlertShown;
         private readonly List<Task>   _pendingGrok    = new();
         private readonly List<object> _verdictHistory = new();
 
-        // ── Automatic WhatsApp call detection ─────────────────────────────────
-        private CallWatcher? _callWatcher;
-        private bool         _autoStarted;   // true if the watcher started this recording
-        private object?      _callInfo;      // caller ID details, sent to Grok for auto-recorded calls
-
-        // ── Pop-up call monitor ───────────────────────────────────────────────
+        // ── Call monitor popup ────────────────────────────────────────────────
         private CallMonitorWindow? _monitor;
-        private volatile bool      _discardSession;   // true after "I recognize this number"
+        private bool               _autoStarted;
+        private object?            _callInfo;
+        private volatile bool      _discardSession;
+
+        // ── Call watcher ──────────────────────────────────────────────────────
+        private CallWatcher? _callWatcher;
+
+        // ── SMS alerts ───────────────────────────────────────────────────
+        private AlertSettings _alertSettings = new();
+        private bool          _alertSent;       // one alert per call
+        private string?       _callerDisplay;   // unknown caller's number, for the alert
 
         // ── Paths ─────────────────────────────────────────────────────────────
         private static readonly string _baseDir = AppDomain.CurrentDomain.BaseDirectory;
         private static readonly string _workDir = Path.Combine(_baseDir, "audio");
-        private readonly string _micPath        = Path.Combine(_workDir, "mic_live.wav");
-        private readonly string _loopbackPath   = Path.Combine(_workDir, "loopback_live.wav");
+        private readonly string _micPath         = Path.Combine(_workDir, "mic_live.wav");
+        private readonly string _loopbackPath    = Path.Combine(_workDir, "loopback_live.wav");
         private readonly string _grokPayloadPath = Path.Combine(_baseDir, "grok_payload_latest.json");
         private readonly string _grokVerdictPath = Path.Combine(_baseDir, "grok_verdict_latest.json");
 
-        // Keys are saved in %AppData%\ScamDetector so they survive rebuilds
-        // and never end up inside your Git repo.
         private static readonly string _settingsDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ScamDetector");
         private readonly string _assemblyKeyPath = Path.Combine(_settingsDir, "key_assembly.txt");
@@ -86,11 +86,10 @@ namespace ScamDetector
         private bool _loadingKeys;
 
         // ── Session data ──────────────────────────────────────────────────────
-        private readonly List<object> _sessionChunks = new();
+        private readonly List<object>          _sessionChunks     = new();
         private readonly List<ConversationLine> _conversation      = new();
         private readonly List<string>           _transcriptionGaps = new();
 
-        // Readable JSON: keeps apostrophes and $ signs as-is, leaves out null fields
         private static readonly JsonSerializerOptions _jsonOptions = new()
         {
             WriteIndented          = true,
@@ -101,8 +100,8 @@ namespace ScamDetector
         public MainWindow()
         {
             InitializeComponent();
-            Application.Current.ShutdownMode = ShutdownMode.OnMainWindowClose;
             LoadSavedKeys();
+            LoadAlertSettings();
             StartCallWatcher();
         }
 
@@ -117,14 +116,8 @@ namespace ScamDetector
                 if (a || g)
                     TxtStatus.Text = $"Status: Loaded saved key(s) ✓{(a ? " AssemblyAI" : "")}{(g ? " Grok" : "")}";
             }
-            catch (Exception ex)
-            {
-                TxtStatus.Text = $"Status: Could not load saved keys ({ex.Message})";
-            }
-            finally
-            {
-                _loadingKeys = false;
-            }
+            catch (Exception ex) { TxtStatus.Text = $"Status: Could not load saved keys ({ex.Message})"; }
+            finally { _loadingKeys = false; }
         }
 
         private static bool LoadKey(PasswordBox box, CheckBox check, string path)
@@ -158,11 +151,9 @@ namespace ScamDetector
         private void SaveKeyIfWanted(CheckBox? check, PasswordBox? box, string path, string name, bool showStatus)
         {
             if (check == null || box == null) return;
-
             try
             {
                 string key = box.Password.Trim();
-
                 if (check.IsChecked == true && key.Length > 0)
                 {
                     Directory.CreateDirectory(_settingsDir);
@@ -174,7 +165,6 @@ namespace ScamDetector
                     if (File.Exists(path)) File.Delete(path);
                     if (showStatus && TxtStatus != null) TxtStatus.Text = $"Status: {name} key will not be saved";
                 }
-                // Checked but empty: keep any saved key, so clearing the box to paste a new one doesn't wipe it
             }
             catch (Exception ex)
             {
@@ -202,12 +192,19 @@ namespace ScamDetector
             try
             {
                 SaveAllKeys();
+                SaveAlertSettingsFromUi(showStatus: false);   // pick up any unsaved typing
                 _assemblyKey = TxtAssemblyKey.Password.Trim();
                 _grokKey     = TxtGrokKey.Password.Trim();
                 Directory.CreateDirectory(_workDir);
 
-                // Reset everything from any previous call
-                _chunkNumber = 0;
+                _chunkNumber    = 0;
+                _highAlertShown = false;
+                _alertSent      = false;
+                _callerDisplay  = null;
+                _autoStarted    = false;
+                _discardSession = false;
+                _callInfo       = null;
+
                 lock (_sessionChunks) _sessionChunks.Clear();
                 lock (_conversation) { _conversation.Clear(); _transcriptionGaps.Clear(); }
                 lock (_verdictHistory)
@@ -218,12 +215,9 @@ namespace ScamDetector
                     _latestAppliedGrok  = 0;
                 }
                 lock (_pendingGrok) _pendingGrok.Clear();
-                _highAlertShown = false;
-                _autoStarted    = false;
-                _discardSession = false;
-                _callInfo       = null;   // set again right after, if this was an auto-start
-                // The log isn't cleared, so the call watcher's messages stay visible
+
                 TxtOutput.AppendText("\n==================================================\n");
+
                 string listeningMessage = _grokKey.Length > 0
                     ? "Scam risk: listening..."
                     : "Scam risk: Grok key not entered — transcription only";
@@ -255,21 +249,16 @@ namespace ScamDetector
                 _micIn.RecordingStopped += (s, a) =>
                 {
                     lock (_writerLock) { _micWriter?.Dispose(); _micWriter = null; }
-                    _micIn?.Dispose();
-                    _micIn = null;
+                    _micIn?.Dispose(); _micIn = null;
                     _micStoppedTcs?.TrySetResult(true);
                 };
                 _loopbackIn.RecordingStopped += (s, a) =>
                 {
                     lock (_writerLock) { _loopbackWriter?.Dispose(); _loopbackWriter = null; }
-                    _loopbackIn?.Dispose();
-                    _loopbackIn = null;
+                    _loopbackIn?.Dispose(); _loopbackIn = null;
                     _loopbackStoppedTcs?.TrySetResult(true);
                 };
 
-                // Windows loopback only delivers data while something is playing.
-                // Playing inaudible silence keeps it streaming so the caller's audio
-                // stays in sync with the mic.
                 _silencePlayer = new WasapiOut();
                 _silencePlayer.Init(new SilenceProvider(_loopbackFormat));
                 _silencePlayer.Play();
@@ -281,8 +270,7 @@ namespace ScamDetector
                 _sessionStart = _chunkStart;
 
                 _chunkTimer = new System.Threading.Timer(
-                    _ => _ = SafeProcessChunkAsync(),
-                    null,
+                    _ => _ = SafeProcessChunkAsync(), null,
                     TimeSpan.FromSeconds(ChunkSeconds),
                     TimeSpan.FromSeconds(ChunkSeconds));
 
@@ -310,8 +298,6 @@ namespace ScamDetector
             await StopRecordingAsync(discard: false);
         }
 
-        // discard = true when the user clicked "I recognize this number":
-        // stop right away, skip the final analysis, and save nothing from this call.
         private async Task StopRecordingAsync(bool discard)
         {
             if (!_isRecording) return;
@@ -342,8 +328,6 @@ namespace ScamDetector
 
             if (discard)
             {
-                // Let any chunk already being processed finish (it will see the discard
-                // flag and throw its results away), then delete everything from this call
                 await _chunkLock.WaitAsync();
                 _chunkLock.Release();
 
@@ -356,19 +340,17 @@ namespace ScamDetector
                 lock (_verdictHistory) { _verdictHistory.Clear(); _latestVerdict = null; }
                 _callInfo = null;
 
-                TxtOutput.Clear();
-                Log("=== Recording stopped: you recognized the caller. Nothing from this call was saved. ===");
+                TxtOutput.AppendText("\n=== Recording stopped: you recognized the caller. Nothing from this call was saved. ===\n");
                 ResetVerdictPanel("Scam risk: not running");
                 BtnRecord.IsEnabled = true;
                 TxtStatus.Text      = "Status: Stopped (caller recognized).";
-                TxtChunkStatus.Text = "Ready — will analyze every 30 seconds";
+                TxtChunkStatus.Text = "Ready";
                 return;
             }
 
             TxtStatus.Text = "Status: Processing final chunk...";
             await ProcessChunkAsync(isFinal: true, waitForLock: true);
 
-            // Wait for any Grok answers still on the way before writing the session file
             Task[] pending;
             lock (_pendingGrok) pending = _pendingGrok.ToArray();
             if (pending.Length > 0)
@@ -395,14 +377,9 @@ namespace ScamDetector
 
         private async Task ProcessChunkAsync(bool isFinal, bool waitForLock)
         {
-            if (waitForLock)
-            {
-                await _chunkLock.WaitAsync();
-            }
+            if (waitForLock) await _chunkLock.WaitAsync();
             else if (!await _chunkLock.WaitAsync(0))
             {
-                // Previous chunk still being analyzed. Nothing is lost:
-                // this audio stays in the live files and joins the next chunk.
                 Log("(Previous chunk still processing — this audio rolls into the next chunk)");
                 return;
             }
@@ -436,9 +413,8 @@ namespace ScamDetector
 
                 TimeSpan callOffset = start - _sessionStart;
                 var result = await TranscribeWithAssemblyAI(stereoSnap, callOffset);
-                if (_discardSession) return;   // caller was recognized while this was processing
+                if (_discardSession) return;
 
-                // Per-chunk record, kept for debugging
                 var chunk = new
                 {
                     chunk            = thisChunk,
@@ -464,17 +440,13 @@ namespace ScamDetector
                 Log("[Chunk debug]");
                 Log(JsonSerializer.Serialize(chunk, _jsonOptions));
 
-                // Payload for Grok: the WHOLE conversation so far
                 string callTimeSoFar = FormatCallTime(end - _sessionStart);
-                string payloadJson   = JsonSerializer.Serialize(
-                    BuildGrokPayload(callTimeSoFar, thisChunk), _jsonOptions);
+                string payloadJson   = JsonSerializer.Serialize(BuildGrokPayload(callTimeSoFar, thisChunk), _jsonOptions);
                 File.WriteAllText(_grokPayloadPath, payloadJson);
 
                 Log($"\n[Grok payload — saved to {Path.GetFileName(_grokPayloadPath)}]");
                 Log(payloadJson);
 
-                // Ask Grok in the background so the next chunk isn't held up.
-                // Skip if there's nothing to judge yet or nothing new was said.
                 if (_grokKey.Length > 0 && hasConversation && result.Lines.Count > 0)
                 {
                     int requestId = Interlocked.Increment(ref _grokRequestCounter);
@@ -486,10 +458,7 @@ namespace ScamDetector
                     SetStatus("Status: 🔴 Recording...",
                               $"Chunk {thisChunk} transcribed. Next in {ChunkSeconds}s...");
             }
-            catch (Exception ex)
-            {
-                Log($"[Chunk {thisChunk} error] {ex.Message}");
-            }
+            catch (Exception ex) { Log($"[Chunk {thisChunk} error] {ex.Message}"); }
             finally
             {
                 TryDelete(micSnap);
@@ -499,15 +468,13 @@ namespace ScamDetector
             }
         }
 
-        // ── SWAP LIVE FILES FOR FRESH ONES (recording never stops) ────────────
+        // ── WRITERS ───────────────────────────────────────────────────────────
         private void SnapshotAndRestartWriters(string micSnap, string loopSnap)
         {
             lock (_writerLock)
             {
-                _micWriter?.Dispose();
-                _micWriter = null;
-                _loopbackWriter?.Dispose();
-                _loopbackWriter = null;
+                _micWriter?.Dispose(); _micWriter = null;
+                _loopbackWriter?.Dispose(); _loopbackWriter = null;
 
                 if (File.Exists(_micPath))      File.Move(_micPath,      micSnap,  true);
                 if (File.Exists(_loopbackPath)) File.Move(_loopbackPath, loopSnap, true);
@@ -520,7 +487,7 @@ namespace ScamDetector
             }
         }
 
-        // ── STEREO FILE: LEFT = USER (mic), RIGHT = CALLER (system audio) ─────
+        // ── AUDIO MIXING ──────────────────────────────────────────────────────
         private static TimeSpan BuildStereoChunk(string micPath, string loopbackPath, string outputPath)
         {
             var readers = new List<AudioFileReader>();
@@ -532,35 +499,22 @@ namespace ScamDetector
                 if (readers.Count == 0) return TimeSpan.Zero;
 
                 TimeSpan duration = readers.Max(r => r.TotalTime);
-
                 user   ??= Silence(duration);
                 caller ??= Silence(duration);
 
                 var stereo = new MultiplexingSampleProvider(new[] { user, caller }, 2);
                 WaveFileWriter.CreateWaveFile16(outputPath, stereo);
-
                 return duration;
             }
-            finally
-            {
-                foreach (var r in readers) r.Dispose();
-            }
+            finally { foreach (var r in readers) r.Dispose(); }
         }
 
         private static ISampleProvider? OpenAsMono16k(string path, List<AudioFileReader> readers)
         {
             if (!File.Exists(path)) return null;
-
             AudioFileReader reader;
-            try { reader = new AudioFileReader(path); }
-            catch { return null; }
-
-            if (reader.TotalTime < TimeSpan.FromMilliseconds(100))
-            {
-                reader.Dispose();
-                return null;
-            }
-
+            try { reader = new AudioFileReader(path); } catch { return null; }
+            if (reader.TotalTime < TimeSpan.FromMilliseconds(100)) { reader.Dispose(); return null; }
             readers.Add(reader);
 
             ISampleProvider source = reader;
@@ -568,17 +522,14 @@ namespace ScamDetector
                 source = new StereoToMonoSampleProvider(source);
             else if (source.WaveFormat.Channels > 2)
                 source = new MultiplexingSampleProvider(new[] { source }, 1);
-
             if (source.WaveFormat.SampleRate != TargetSampleRate)
                 source = new WdlResamplingSampleProvider(source, TargetSampleRate);
-
             return source;
         }
 
         private static ISampleProvider Silence(TimeSpan duration) =>
             new SilenceProvider(WaveFormat.CreateIeeeFloatWaveFormat(TargetSampleRate, 1))
-                .ToSampleProvider()
-                .Take(duration);
+                .ToSampleProvider().Take(duration);
 
         // ── ASSEMBLYAI ────────────────────────────────────────────────────────
         private record AssemblyResult(
@@ -593,37 +544,25 @@ namespace ScamDetector
             [property: JsonPropertyName("text")]       string  Text,
             [property: JsonPropertyName("confidence")] double? Confidence);
 
-        // Channel 1 = mic = user, channel 2 = system audio = caller
         private static string SpeakerFor(JsonElement el)
         {
             string? id = null;
-
             if (el.TryGetProperty("channel", out var ch) && ch.ValueKind != JsonValueKind.Null)
                 id = ch.ValueKind == JsonValueKind.String ? ch.GetString() : ch.ToString();
-
             if (string.IsNullOrEmpty(id) &&
                 el.TryGetProperty("speaker", out var sp) && sp.ValueKind != JsonValueKind.Null)
                 id = sp.ValueKind == JsonValueKind.String ? sp.GetString() : sp.ToString();
-
-            return id switch
-            {
-                "1" => "user",
-                "2" => "caller",
-                _   => "unknown"
-            };
+            return id switch { "1" => "user", "2" => "caller", _ => "unknown" };
         }
 
         private async Task<AssemblyResult> TranscribeWithAssemblyAI(string filePath, TimeSpan callOffset)
         {
             try
             {
-                // 1. Upload
-                using var uploadReq = new HttpRequestMessage(
-                    HttpMethod.Post, "https://api.assemblyai.com/v2/upload");
+                using var uploadReq = new HttpRequestMessage(HttpMethod.Post, "https://api.assemblyai.com/v2/upload");
                 uploadReq.Headers.Add("Authorization", _assemblyKey);
                 uploadReq.Content = new ByteArrayContent(await File.ReadAllBytesAsync(filePath));
-                uploadReq.Content.Headers.ContentType =
-                    new MediaTypeHeaderValue("application/octet-stream");
+                uploadReq.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
 
                 using var uploadResp = await _http.SendAsync(uploadReq);
                 string uploadBody = await uploadResp.Content.ReadAsStringAsync();
@@ -634,9 +573,7 @@ namespace ScamDetector
                 using (var doc = JsonDocument.Parse(uploadBody))
                     uploadUrl = doc.RootElement.GetProperty("upload_url").GetString()!;
 
-                // 2. Submit (multichannel = left/user and right/caller transcribed separately)
-                using var submitReq = new HttpRequestMessage(
-                    HttpMethod.Post, "https://api.assemblyai.com/v2/transcript");
+                using var submitReq = new HttpRequestMessage(HttpMethod.Post, "https://api.assemblyai.com/v2/transcript");
                 submitReq.Headers.Add("Authorization", _assemblyKey);
                 submitReq.Content = new StringContent(JsonSerializer.Serialize(new
                 {
@@ -653,15 +590,13 @@ namespace ScamDetector
                 using (var doc = JsonDocument.Parse(submitBody))
                     id = doc.RootElement.GetProperty("id").GetString()!;
 
-                // 3. Poll (up to ~90 seconds)
-                string pollUrl   = $"https://api.assemblyai.com/v2/transcript/{id}";
+                string pollUrl = $"https://api.assemblyai.com/v2/transcript/{id}";
                 string finalBody = "";
-                bool   completed = false;
+                bool completed = false;
 
                 for (int i = 0; i < 60 && !completed; i++)
                 {
                     await Task.Delay(1500);
-
                     using var pollReq = new HttpRequestMessage(HttpMethod.Get, pollUrl);
                     pollReq.Headers.Add("Authorization", _assemblyKey);
                     using var pollResp = await _http.SendAsync(pollReq);
@@ -669,19 +604,17 @@ namespace ScamDetector
 
                     using var pollDoc = JsonDocument.Parse(finalBody);
                     string status = pollDoc.RootElement.GetProperty("status").GetString()!;
-
                     if (status == "completed") completed = true;
                     else if (status == "error")
                     {
                         string msg = pollDoc.RootElement.TryGetProperty("error", out var err)
-                            ? err.GetString() ?? "unknown error" : "unknown error";
+                            ? err.GetString() ?? "unknown" : "unknown";
                         return AssemblyResult.Fail($"AssemblyAI error: {msg}");
                     }
                 }
 
                 if (!completed) return AssemblyResult.Fail("AssemblyAI timed out.");
 
-                // 4. Parse
                 using var finalDoc = JsonDocument.Parse(finalBody);
                 var root = finalDoc.RootElement;
 
@@ -692,49 +625,33 @@ namespace ScamDetector
                 if (root.TryGetProperty("utterances", out var utterances) &&
                     utterances.ValueKind == JsonValueKind.Array)
                 {
-                    foreach (var u in utterances.EnumerateArray()
-                                                .OrderBy(u => u.GetProperty("start").GetInt64()))
+                    foreach (var u in utterances.EnumerateArray().OrderBy(u => u.GetProperty("start").GetInt64()))
                     {
                         string who     = SpeakerFor(u);
                         string text    = u.GetProperty("text").GetString() ?? "";
                         long   startMs = u.GetProperty("start").GetInt64();
                         long   endMs   = u.GetProperty("end").GetInt64();
 
-                        // AssemblyAI times are relative to this chunk; add the chunk's offset
                         string callStart = FormatCallTime(callOffset + TimeSpan.FromMilliseconds(startMs));
                         string callEnd   = FormatCallTime(callOffset + TimeSpan.FromMilliseconds(endMs));
 
                         double? confidence = u.TryGetProperty("confidence", out var c)
                             ? Math.Round(c.GetDouble(), 3) : null;
 
-                        speakers.Add(new
-                        {
-                            speaker   = who,
-                            text,
-                            call_time = $"{callStart} - {callEnd}",
-                            start_ms  = startMs,
-                            end_ms    = endMs,
-                            confidence
-                        });
-
+                        speakers.Add(new { speaker = who, text, call_time = $"{callStart} - {callEnd}", start_ms = startMs, end_ms = endMs, confidence });
                         conversation.Add(new ConversationLine(callStart, who, text, confidence));
-
                         string label = who == "caller" ? "Caller" : who == "user" ? "User" : "Unknown";
                         lines.Add($"[{callStart}] {label}: {text}");
                     }
                 }
 
-                string transcript = lines.Count > 0
-                    ? string.Join("\n", lines)
+                string transcript = lines.Count > 0 ? string.Join("\n", lines)
                     : (root.TryGetProperty("text", out var t) && t.ValueKind == JsonValueKind.String
                         ? t.GetString() ?? "" : "");
 
                 return new AssemblyResult(transcript, speakers, conversation, null);
             }
-            catch (Exception ex)
-            {
-                return AssemblyResult.Fail($"AssemblyAI exception: {ex.Message}");
-            }
+            catch (Exception ex) { return AssemblyResult.Fail($"AssemblyAI exception: {ex.Message}"); }
         }
 
         // ── GROK PAYLOAD ──────────────────────────────────────────────────────
@@ -746,20 +663,15 @@ namespace ScamDetector
                 {
                     call_time_so_far = $"0:00 - {callTimeSoFar}",
                     chunks_analyzed  = chunksAnalyzed,
-                    speakers = new
-                    {
-                        user   = "Person using the app",
-                        caller = "Person on the other end of the call"
-                    },
-                    call_info          = _callInfo,   // only present for auto-recorded calls
-                    transcription_gaps = _transcriptionGaps.Count > 0
-                        ? new List<string>(_transcriptionGaps) : null,
-                    conversation = new List<ConversationLine>(_conversation)
+                    speakers = new { user = "Person using the app", caller = "Person on the other end of the call" },
+                    transcription_gaps = _transcriptionGaps.Count > 0 ? new List<string>(_transcriptionGaps) : null,
+                    call_info          = _callInfo,
+                    conversation       = new List<ConversationLine>(_conversation)
                 };
             }
         }
 
-        // ── GROK: ASK FOR A VERDICT ───────────────────────────────────────────
+        // ── GROK ──────────────────────────────────────────────────────────────
         private async Task AnalyzeWithGrokAsync(string payloadJson, int requestId, int afterChunk, string callTime)
         {
             try
@@ -767,26 +679,14 @@ namespace ScamDetector
                 SetChunkStatus($"Asking Grok about the call so far (0:00 - {callTime})...");
 
                 var (verdict, error) = await AskGrokAsync(payloadJson);
-                if (_discardSession) return;   // caller was recognized; ignore late answers
+                if (_discardSession) return;
 
                 bool isNewest;
                 lock (_verdictHistory)
                 {
-                    _verdictHistory.Add(new
-                    {
-                        after_chunk = afterChunk,
-                        call_time   = $"0:00 - {callTime}",
-                        verdict,
-                        error
-                    });
-
-                    // Answers can arrive out of order; never replace a newer verdict with an older one
+                    _verdictHistory.Add(new { after_chunk = afterChunk, call_time = $"0:00 - {callTime}", verdict, error });
                     isNewest = requestId > _latestAppliedGrok;
-                    if (isNewest && verdict != null)
-                    {
-                        _latestAppliedGrok = requestId;
-                        _latestVerdict     = verdict;
-                    }
+                    if (isNewest && verdict != null) { _latestAppliedGrok = requestId; _latestVerdict = verdict; }
                 }
 
                 if (error != null || verdict == null)
@@ -796,7 +696,7 @@ namespace ScamDetector
                     return;
                 }
 
-                if (!isNewest) return;   // an older answer arrived late; a newer one is already shown
+                if (!isNewest) return;
 
                 string verdictJson = JsonSerializer.Serialize(verdict, _jsonOptions);
                 File.WriteAllText(_grokVerdictPath, verdictJson);
@@ -805,18 +705,20 @@ namespace ScamDetector
 
                 ShowVerdict(verdict, callTime);
 
+                // No extra window: the monitor pop-up already shows the verdict.
+                // Just play a sound the first time the call turns high-risk.
                 if (verdict.RiskLevel == "high" && !_highAlertShown)
                 {
                     _highAlertShown = true;
-                    ShowScamAlert(verdict);
+                    Dispatcher.Invoke(() => System.Media.SystemSounds.Exclamation.Play());
                 }
+
+                // SMS alert: once per call, as soon as the risk crosses your threshold
+                MaybeSendSmsAlert(verdict);
 
                 if (_isRecording) SetChunkStatus($"Grok checked 0:00 - {callTime}. Listening...");
             }
-            catch (Exception ex)
-            {
-                Log($"\n[Grok error] {ex.Message}");
-            }
+            catch (Exception ex) { Log($"\n[Grok error] {ex.Message}"); }
         }
 
         private async Task<(ScamVerdict? verdict, string? error)> AskGrokAsync(string payloadJson)
@@ -834,12 +736,7 @@ namespace ScamDetector
                     response_format = new
                     {
                         type        = "json_schema",
-                        json_schema = new
-                        {
-                            name   = "scam_assessment",
-                            strict = true,
-                            schema = GrokPrompt.Schema
-                        }
+                        json_schema = new { name = "scam_assessment", strict = true, schema = GrokPrompt.Schema }
                     }
                 };
 
@@ -849,19 +746,12 @@ namespace ScamDetector
 
                 using var resp = await _http.SendAsync(req);
                 string respBody = await resp.Content.ReadAsStringAsync();
-
                 if (!resp.IsSuccessStatusCode)
                     return (null, $"Grok request failed ({(int)resp.StatusCode}): {Short(respBody)}");
 
                 string content;
                 using (var doc = JsonDocument.Parse(respBody))
-                {
-                    content = doc.RootElement
-                        .GetProperty("choices")[0]
-                        .GetProperty("message")
-                        .GetProperty("content")
-                        .GetString() ?? "";
-                }
+                    content = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
 
                 var verdict = JsonSerializer.Deserialize<ScamVerdict>(StripCodeFences(content));
                 if (verdict == null) return (null, "Grok returned an empty answer.");
@@ -870,10 +760,7 @@ namespace ScamDetector
                 verdict.RiskLevel      = (verdict.RiskLevel ?? "low").Trim().ToLowerInvariant();
                 return (verdict, null);
             }
-            catch (Exception ex)
-            {
-                return (null, $"Grok exception: {ex.Message}");
-            }
+            catch (Exception ex) { return (null, $"Grok exception: {ex.Message}"); }
         }
 
         private static string StripCodeFences(string s)
@@ -883,8 +770,7 @@ namespace ScamDetector
             int firstNewline = s.IndexOf('\n');
             int lastFence    = s.LastIndexOf("```", StringComparison.Ordinal);
             return firstNewline >= 0 && lastFence > firstNewline
-                ? s.Substring(firstNewline + 1, lastFence - firstNewline - 1).Trim()
-                : s;
+                ? s.Substring(firstNewline + 1, lastFence - firstNewline - 1).Trim() : s;
         }
 
         // ── VERDICT DISPLAY ───────────────────────────────────────────────────
@@ -899,9 +785,9 @@ namespace ScamDetector
             TxtRiskLevel.Text       = message;
             TxtRiskLevel.Foreground = new SolidColorBrush(Color.FromRgb(170, 170, 170));
             TxtRiskSummary.Text     = "";
-            TxtRiskReasons.Text     = "";
             TxtRiskAction.Text      = "";
             ActionBox.Visibility    = Visibility.Collapsed;
+            TxtRiskReasons.Text     = "";
             _monitor?.ShowListening(message);
         }
 
@@ -926,10 +812,9 @@ namespace ScamDetector
                 TxtRiskLevel.Foreground = new SolidColorBrush(color);
                 TxtRiskSummary.Text     = summary;
                 TxtRiskReasons.Text     = reasons;
-
-                TxtRiskAction.Text     = action;
-                ActionBox.BorderBrush  = new SolidColorBrush(color);
-                ActionBox.Visibility   = action.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+                TxtRiskAction.Text      = action;
+                ActionBox.BorderBrush   = new SolidColorBrush(color);
+                ActionBox.Visibility    = action.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
 
                 _monitor?.ShowVerdict(levelText, color, summary, reasons, action);
             });
@@ -939,10 +824,8 @@ namespace ScamDetector
         {
             Dispatcher.Invoke(() =>
             {
-                // Keep the last good verdict on screen; just note the problem under it
                 string note = $"⚠ Latest Grok check failed: {Short(error)}";
-                TxtRiskSummary.Text = string.IsNullOrEmpty(TxtRiskSummary.Text)
-                    ? note : TxtRiskSummary.Text + "\n" + note;
+                TxtRiskSummary.Text = string.IsNullOrEmpty(TxtRiskSummary.Text) ? note : TxtRiskSummary.Text + "\n" + note;
                 _monitor?.AppendNote(note);
             });
         }
@@ -956,7 +839,6 @@ namespace ScamDetector
                 foreach (var ev in r.Evidence)
                     sb.AppendLine($"    [{ev.Time}] \"{ev.Quote}\"");
             }
-            // The recommended action is shown separately, in its own larger box
             return sb.ToString().TrimEnd();
         }
 
@@ -966,78 +848,149 @@ namespace ScamDetector
             return s.Length > 0 ? char.ToUpper(s[0]) + s[1..] : s;
         }
 
-        // Pops up on top of every window (including the call app) the first time a call turns high-risk
-        private void ShowScamAlert(ScamVerdict v)
+        // ── SMS ALERTS ───────────────────────────────────────────────────
+        private void LoadAlertSettings()
         {
-            Dispatcher.InvokeAsync(() =>
-            {
-                System.Media.SystemSounds.Exclamation.Play();
+            _alertSettings = AlertSettings.Load();
 
-                var panel = new StackPanel { Margin = new Thickness(20) };
-                panel.Children.Add(new TextBlock
-                {
-                    Text = "⚠ Possible scam call",
-                    FontSize = 22, FontWeight = FontWeights.Bold,
-                    Foreground = new SolidColorBrush(RiskHigh)
-                });
-                panel.Children.Add(new TextBlock
-                {
-                    Text = $"Scam likelihood: {v.ScamLikelihood}/100",
-                    Foreground = Brushes.White, Margin = new Thickness(0, 6, 0, 0)
-                });
-                panel.Children.Add(new TextBlock
-                {
-                    Text = v.Summary, TextWrapping = TextWrapping.Wrap,
-                    Foreground = Brushes.White, Margin = new Thickness(0, 10, 0, 0)
-                });
-                panel.Children.Add(new TextBlock
-                {
-                    Text = string.Join("\n", v.Reasons.Take(3).Select(r => $"• {PrettyCategory(r.Category)}")),
-                    TextWrapping = TextWrapping.Wrap,
-                    Foreground = new SolidColorBrush(Color.FromRgb(220, 220, 220)),
-                    Margin = new Thickness(0, 10, 0, 0)
-                });
-                panel.Children.Add(new TextBlock
-                {
-                    Text = v.RecommendedAction, TextWrapping = TextWrapping.Wrap,
-                    FontWeight = FontWeights.Bold, Foreground = Brushes.White,
-                    Margin = new Thickness(0, 12, 0, 0)
-                });
+            ChkSmsAlerts.IsChecked = _alertSettings.Enabled;
+            ChkAlertMedium.IsChecked    = _alertSettings.AlertOnMedium;
+            TxtAlertName.Text           = _alertSettings.YourName;
+            TxtAlertTo.Text             = _alertSettings.MyNumber;
+            TxtTwilioSid.Text           = _alertSettings.AccountSid;
+            TxtTwilioToken.Password     = _alertSettings.AuthToken;
+            TxtTwilioFrom.Text          = _alertSettings.FromNumber;
 
-                var ok = new Button
-                {
-                    Content = "OK", Width = 90, Height = 30,
-                    HorizontalAlignment = HorizontalAlignment.Right,
-                    Margin = new Thickness(0, 16, 0, 0)
-                };
-                panel.Children.Add(ok);
-
-                var alert = new Window
-                {
-                    Title = "ScamShield Alert",
-                    Content = panel,
-                    Width = 440,
-                    SizeToContent = SizeToContent.Height,
-                    Topmost = true,
-                    ResizeMode = ResizeMode.NoResize,
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                    Background = new SolidColorBrush(Color.FromRgb(30, 30, 30))
-                };
-                ok.Click += (_, _) => alert.Close();
-                alert.Show();
-            });
+            // Hooked up after loading, so filling in the checkbox above doesn't trigger a save
+            ChkSmsAlerts.Checked   += (_, _) => ToggleAlerts(true);
+            ChkSmsAlerts.Unchecked += (_, _) => ToggleAlerts(false);
+            ChkAlertMedium.Checked      += (_, _) => SaveAlertSettingsFromUi(showStatus: false);
+            ChkAlertMedium.Unchecked    += (_, _) => SaveAlertSettingsFromUi(showStatus: false);
         }
 
-        // ── POP-UP CALL MONITOR ───────────────────────────────────────────────
+        private void ToggleAlerts(bool on)
+        {
+            SaveAlertSettingsFromUi(showStatus: false);
+            SetAlertStatus(on ? "SMS alerts on" : "SMS alerts off");
+        }
+
+        private void BtnSaveAlerts_Click(object sender, RoutedEventArgs e) => SaveAlertSettingsFromUi();
+
+        private bool SaveAlertSettingsFromUi(bool showStatus = true)
+        {
+            if (ChkSmsAlerts == null) return false;   // window still loading
+
+            var s = new AlertSettings
+            {
+                Enabled       = ChkSmsAlerts.IsChecked == true,
+                AlertOnMedium = ChkAlertMedium.IsChecked == true,
+                YourName      = TxtAlertName.Text.Trim(),
+                AccountSid    = TxtTwilioSid.Text.Trim(),
+                AuthToken     = TxtTwilioToken.Password.Trim()
+            };
+
+            // Numbers are cleaned up into the +14045551234 format Twilio needs
+            if (TxtAlertTo.Text.Trim().Length > 0)
+            {
+                string? n = SmsAlerter.NormalizeNumber(TxtAlertTo.Text);
+                if (n == null) { if (showStatus) SetAlertStatus("That number doesn't look valid. Try +14045551234."); return false; }
+                s.MyNumber = n;
+                TxtAlertTo.Text = n;
+            }
+            if (TxtTwilioFrom.Text.Trim().Length > 0)
+            {
+                string? n = SmsAlerter.NormalizeNumber(TxtTwilioFrom.Text);
+                if (n == null) { if (showStatus) SetAlertStatus("The sandbox number doesn't look valid. It should be +14155238886."); return false; }
+                s.FromNumber = n;
+                TxtTwilioFrom.Text = n;
+            }
+
+            try { s.Save(); }
+            catch (Exception ex) { SetAlertStatus($"Couldn't save: {ex.Message}"); return false; }
+
+            _alertSettings = s;
+            if (showStatus) SetAlertStatus("Saved ✓");
+            return true;
+        }
+
+        private async void BtnTestAlert_Click(object sender, RoutedEventArgs e)
+        {
+            if (!SaveAlertSettingsFromUi()) return;
+
+            var s = _alertSettings;
+            string? missing = s.MissingSetup();
+            if (missing != null) { SetAlertStatus(missing); return; }
+
+            BtnTestAlert.IsEnabled = false;
+            SetAlertStatus("Sending...");
+
+            string? error = null;
+            foreach (string to in s.Recipients())
+            {
+                error = await SmsAlerter.SendAsync(s, to,
+                    "🛡️ ScamShield test: SMS alerts are working. You'll get a message like this if a call looks like a scam.");
+                if (error != null) break;
+            }
+
+            BtnTestAlert.IsEnabled = true;
+            SetAlertStatus(error ?? "Test message sent ✓");
+        }
+
+        // Decides whether this verdict should trigger an alert, and says why not if it doesn't.
+        private void MaybeSendSmsAlert(ScamVerdict verdict)
+        {
+            if (_alertSent) return;   // already alerted on this call
+
+            bool qualifies = verdict.RiskLevel == "high" ||
+                             (_alertSettings.AlertOnMedium && verdict.RiskLevel == "medium");
+            if (!qualifies) return;
+
+            if (!_alertSettings.Enabled)
+            {
+                Log("[SMS alert] Risk crossed the threshold, but SMS alerts are turned off.");
+                return;
+            }
+
+            string? missing = _alertSettings.MissingSetup();
+            if (missing != null)
+            {
+                Log($"[SMS alert] Risk crossed the threshold, but setup is incomplete: {missing}");
+                return;
+            }
+
+            _alertSent = true;
+            Log($"[SMS alert] {verdict.RiskLevel.ToUpperInvariant()} risk detected — sending SMS alert now...");
+            _ = SendSmsAlertsAsync(verdict);
+        }
+
+        private async Task SendSmsAlertsAsync(ScamVerdict verdict)
+        {
+            var s = _alertSettings;
+            if (_discardSession) return;
+
+            string body = SmsAlerter.BuildScamAlert(s, verdict, _callerDisplay);
+            foreach (string to in s.Recipients())
+            {
+                string? error = await SmsAlerter.SendAsync(s, to, body);
+                Log(error == null
+                    ? $"[SMS alert] Sent to number ending {LastFour(to)}."
+                    : $"[SMS alert] Failed for number ending {LastFour(to)}: {error}");
+            }
+        }
+
+        private static string LastFour(string number) => number.Length >= 4 ? number[^4..] : number;
+
+        private void SetAlertStatus(string message) =>
+            Dispatcher.Invoke(() => TxtAlertStatus.Text = message);
+
+        // ── CALL MONITOR POPUP ────────────────────────────────────────────────
         private void OpenCallMonitor(string listeningMessage)
         {
-            _monitor?.Close();   // close any window left over from a previous call
-
+            _monitor?.Close();
             var monitor = new CallMonitorWindow(_sessionStart, listeningMessage);
             monitor.SetCaller("Recording started manually");
             monitor.RecognizedCaller += OnCallerRecognized;
             monitor.Closed += (_, _) => { if (_monitor == monitor) _monitor = null; };
-
             _monitor = monitor;
             monitor.Show();
         }
@@ -1048,149 +1001,61 @@ namespace ScamDetector
             await StopRecordingAsync(discard: true);
         }
 
-        // ── AUTOMATIC WHATSAPP CALL DETECTION ─────────────────────────────────
+        // ── CALL DETECTION ───────────────────────────────────────────
         private void StartCallWatcher()
         {
             _callWatcher = new CallWatcher();
             _callWatcher.StatusMessage += msg => Log($"[Call watcher] {msg}");
-            _callWatcher.CallStarted   += OnWhatsAppCallStarted;
-            _callWatcher.CallEnded     += OnWhatsAppCallEnded;
-
+            _callWatcher.CallStarted   += OnCallStarted;
+            _callWatcher.CallEnded     += OnCallEnded;
             try { _callWatcher.Start(); }
             catch (Exception ex) { Log($"[Call watcher] Could not start: {ex.Message}"); }
         }
 
-        private void OnWhatsAppCallStarted(CallerInfo info)
+        private void OnCallStarted(CallerInfo info)
         {
             Dispatcher.Invoke(() =>
             {
-                if (ChkAutoRecord.IsChecked != true)
-                {
-                    Log("[Call watcher] Auto-record is turned off, so not recording.");
-                    return;
-                }
-                if (_isRecording)
-                {
-                    Log("[Call watcher] Already recording.");
-                    return;
-                }
-                if (info.IsContact == true)
-                {
-                    Log($"[Call watcher] Call with a saved contact ({info.Display}), so not recording.");
-                    return;
-                }
-                if (info.IsContact == null)
-                {
-                    // Could also be a voice message, which uses the mic too.
-                    Log("[Call watcher] Couldn't tell who's calling, so not recording. Use Start Recording if needed.");
-                    return;
-                }
+                if (ChkAutoRecord.IsChecked != true) { Log("[Call watcher] Auto-record is off."); return; }
+                if (_isRecording) { Log("[Call watcher] Already recording."); return; }
+                if (info.IsContact == true) { Log($"[Call watcher] Saved contact ({info.Display}), not recording."); return; }
+                if (info.IsContact == null) { Log("[Call watcher] Couldn't identify caller, not auto-recording."); return; }
                 if (string.IsNullOrWhiteSpace(TxtAssemblyKey.Password))
                 {
-                    ShowToast("Unknown number calling", "Can't record: no AssemblyAI key entered.");
+                    Log("[Call watcher] Unknown caller, but can't record: no AssemblyAI key entered.");
+                    TxtStatus.Text = "Status: ⚠ Unknown caller — no AssemblyAI key, not recording.";
                     return;
                 }
 
                 BtnRecord_Click(BtnRecord, new RoutedEventArgs());
-                if (!_isRecording) return;   // start failed; the error was already shown
+                if (!_isRecording) return;
 
                 _autoStarted = true;
-                _callInfo = new
-                {
-                    caller_display    = info.Display,
-                    in_contacts       = false,
-                    recording_started = "automatically (caller not in contacts)"
-                };
-
+                _callInfo = new { caller_display = info.Display, in_contacts = false, recording_started = "automatically (caller not in contacts)" };
                 _monitor?.SetCaller($"Unknown number: {info.Display}");
+                _callerDisplay = info.Display;
                 Log($"[Call watcher] Unknown caller ({info.Display}). Recording started automatically.");
-                ShowToast("Unknown number calling - recording started", info.Display ?? "");
             });
         }
 
-        private void OnWhatsAppCallEnded()
+        private void OnCallEnded()
         {
             Dispatcher.Invoke(() =>
             {
-                // Only auto-stop recordings the watcher started; manual ones are left alone
                 if (!_autoStarted || !_isRecording) return;
-
-                ShowToast("Call ended", "Recording stopped. Finishing the analysis...");
+                Log("[Call watcher] Call ended — stopping recording.");
                 _ = StopRecordingAsync(discard: false);
             });
         }
 
-        // Small notification in the bottom-right corner that disappears after a few seconds
-        private void ShowToast(string title, string message)
-        {
-            Dispatcher.InvokeAsync(() =>
-            {
-                System.Media.SystemSounds.Asterisk.Play();
-
-                var panel = new StackPanel { Margin = new Thickness(16, 12, 16, 12) };
-                panel.Children.Add(new TextBlock
-                {
-                    Text = title, FontSize = 15, FontWeight = FontWeights.Bold,
-                    Foreground = Brushes.White, TextWrapping = TextWrapping.Wrap
-                });
-                if (!string.IsNullOrWhiteSpace(message))
-                {
-                    panel.Children.Add(new TextBlock
-                    {
-                        Text = message, Margin = new Thickness(0, 4, 0, 0),
-                        Foreground = new SolidColorBrush(Color.FromRgb(210, 210, 210)),
-                        TextWrapping = TextWrapping.Wrap
-                    });
-                }
-
-                var area  = SystemParameters.WorkArea;
-                var toast = new Window
-                {
-                    Content         = new Border
-                    {
-                        Child           = panel,
-                        BorderBrush     = new SolidColorBrush(RiskMedium),
-                        BorderThickness = new Thickness(0, 0, 0, 4)
-                    },
-                    WindowStyle     = WindowStyle.None,
-                    ResizeMode      = ResizeMode.NoResize,
-                    Topmost         = true,
-                    ShowInTaskbar   = false,
-                    ShowActivated   = false,   // don't steal focus from the call
-                    Width           = 340,
-                    SizeToContent   = SizeToContent.Height,
-                    Background      = new SolidColorBrush(Color.FromRgb(40, 40, 40)),
-                    WindowStartupLocation = WindowStartupLocation.Manual,
-                    Left            = area.Right - 356,
-                    Top             = area.Bottom - 120
-                };
-                toast.ContentRendered += (_, _) =>
-                {
-                    toast.Left = area.Right  - toast.ActualWidth  - 16;
-                    toast.Top  = area.Bottom - toast.ActualHeight - 16;
-                };
-                toast.MouseLeftButtonDown += (_, _) => toast.Close();
-                toast.Show();
-
-                var timer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
-                timer.Tick += (_, _) => { timer.Stop(); toast.Close(); };
-                timer.Start();
-            });
-        }
-
-        // ── FULL SESSION JSON ─────────────────────────────────────────────────
+        // ── SESSION JSON ──────────────────────────────────────────────────────
         private void OutputSessionJson()
         {
             List<object> chunks;
             lock (_sessionChunks) chunks = new List<object>(_sessionChunks);
 
-            List<object> verdicts;
-            ScamVerdict? finalVerdict;
-            lock (_verdictHistory)
-            {
-                verdicts     = new List<object>(_verdictHistory);
-                finalVerdict = _latestVerdict;
-            }
+            List<object> verdicts; ScamVerdict? finalVerdict;
+            lock (_verdictHistory) { verdicts = new List<object>(_verdictHistory); finalVerdict = _latestVerdict; }
 
             string callLength = FormatCallTime(DateTime.Now - _sessionStart);
 
@@ -1199,16 +1064,8 @@ namespace ScamDetector
                 session_id   = Guid.NewGuid().ToString(),
                 recorded_at  = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                 total_chunks = chunks.Count,
-                speakers = new
-                {
-                    user   = "Person using the app (microphone)",
-                    caller = "Person on the other end of the call (system audio)"
-                },
-                pipeline = new
-                {
-                    transcription = "AssemblyAI (multichannel)",
-                    scam_analysis = $"xAI {GrokPrompt.Model}"
-                },
+                speakers     = new { user = "Person using the app (microphone)", caller = "Person on the other end of the call (system audio)" },
+                pipeline     = new { transcription = "AssemblyAI (multichannel)", scam_analysis = $"xAI {GrokPrompt.Model}" },
                 call_info      = _callInfo,
                 final_verdict  = finalVerdict,
                 verdict_history = verdicts,
@@ -1216,7 +1073,7 @@ namespace ScamDetector
                 chunks
             };
 
-            string json = JsonSerializer.Serialize(session, _jsonOptions);
+            string json    = JsonSerializer.Serialize(session, _jsonOptions);
             string outPath = Path.Combine(_baseDir, $"session_{DateTime.Now:yyyyMMdd_HHmmss}.json");
             File.WriteAllText(outPath, json);
 
@@ -1237,11 +1094,7 @@ namespace ScamDetector
 
         private void SetStatus(string status, string chunkStatus)
         {
-            Dispatcher.Invoke(() =>
-            {
-                TxtStatus.Text      = status;
-                TxtChunkStatus.Text = chunkStatus;
-            });
+            Dispatcher.Invoke(() => { TxtStatus.Text = status; TxtChunkStatus.Text = chunkStatus; });
         }
 
         private void SetChunkStatus(string chunkStatus)
@@ -1249,7 +1102,6 @@ namespace ScamDetector
             Dispatcher.Invoke(() => TxtChunkStatus.Text = chunkStatus);
         }
 
-        // 0:45, 12:03, or 1:02:10 for calls over an hour
         private static string FormatCallTime(TimeSpan t)
         {
             if (t < TimeSpan.Zero) t = TimeSpan.Zero;

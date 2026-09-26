@@ -57,6 +57,10 @@ namespace ScamDetector
 
         public void ShowVerdict(string levelText, Color color, string summary, string reasons, string action)
         {
+            // Tint the recording banner to match the risk, so the whole window
+            // reads as an alert without opening anything extra
+            RecordingBanner.Background = new SolidColorBrush(Color.FromArgb(60, color.R, color.G, color.B));
+
             RiskBorder.BorderBrush  = new SolidColorBrush(color);
             TxtRiskLevel.Text       = levelText;
             TxtRiskLevel.Foreground = new SolidColorBrush(color);

@@ -1,52 +1,238 @@
 {
-  "call_time_so_far": "0:00 - 3:30",
-  "chunks_analyzed": 7,
+  "call_time_so_far": "0:00 - 2:53",
+  "chunks_analyzed": 6,
   "speakers": {
     "user": "Person using the app",
     "caller": "Person on the other end of the call"
   },
   "conversation": [
     {
-      "time": "0:01",
+      "time": "0:07",
       "speaker": "user",
-      "text": "That— well, that's like, I mean, there's nothing wrong with that, but it's like they'll look at that, they'll be like, oh yeah, they just vibe coded it and left it. No, but they know everyone's vibe code. Yeah, of course, but like, it's like we didn't even— we didn't do much past that. It's like we vibe, or at least as far as the UI/UX, we just vibe coded that part and left it. Of course everyone's vibe coding, but like, okay, wait, wait, turn it around. Like, this is what we have right now.",
-      "confidence": 0.962
+      "text": "Hello? Hello?",
+      "confidence": 0.847
+    },
+    {
+      "time": "0:08",
+      "speaker": "caller",
+      "text": "Hello.",
+      "confidence": 0.643
+    },
+    {
+      "time": "0:09",
+      "speaker": "user",
+      "text": "Hello, Kale.",
+      "confidence": 0.902
+    },
+    {
+      "time": "0:11",
+      "speaker": "user",
+      "text": "Um, we are calling about your, um,",
+      "confidence": 0.897
+    },
+    {
+      "time": "0:12",
+      "speaker": "caller",
+      "text": "Um,",
+      "confidence": 0.959
+    },
+    {
+      "time": "0:12",
+      "speaker": "caller",
+      "text": "we are calling about your, uh,",
+      "confidence": 0.985
+    },
+    {
+      "time": "0:15",
+      "speaker": "caller",
+      "text": "current bank loan that you are missing. We, um, we need you to pay off a loan of $1,000.",
+      "confidence": 0.993
+    },
+    {
+      "time": "0:15",
+      "speaker": "user",
+      "text": "current bank loan that you are missing. We",
+      "confidence": 0.998
+    },
+    {
+      "time": "0:18",
+      "speaker": "user",
+      "text": "need you to pay off a loan of $1,000.",
+      "confidence": 0.914
+    },
+    {
+      "time": "0:20",
+      "speaker": "caller",
+      "text": "You missed a payment on your car",
+      "confidence": 0.995
+    },
+    {
+      "time": "0:20",
+      "speaker": "user",
+      "text": "You missed a payment on your car last month.",
+      "confidence": 0.996
+    },
+    {
+      "time": "0:22",
+      "speaker": "caller",
+      "text": "last month.",
+      "confidence": 1
+    },
+    {
+      "time": "0:23",
+      "speaker": "caller",
+      "text": "You don't pay that in the next 48 hours, unfortunately your bank is going to, uh,",
+      "confidence": 0.938
+    },
+    {
+      "time": "0:23",
+      "speaker": "user",
+      "text": "If you don't pay that in the next 48 hours, unfortunately,",
+      "confidence": 0.965
+    },
+    {
+      "time": "0:27",
+      "speaker": "user",
+      "text": "your bank is going to, uh,",
+      "confidence": 0.994
+    },
+    {
+      "time": "0:29",
+      "speaker": "caller",
+      "text": "be shut",
+      "confidence": 0.993
+    },
+    {
+      "time": "0:29",
+      "speaker": "user",
+      "text": "be shut",
+      "confidence": 0.887
+    },
+    {
+      "time": "0:30",
+      "speaker": "caller",
+      "text": "down. Your bank account is going to— you're going to get locked out of your bank account if that payment is not made in 48 hours.",
+      "confidence": 0.973
     },
     {
       "time": "0:30",
       "speaker": "user",
-      "text": "Okay, obviously this, this is not gonna show up. Yeah, this is— that's not gonna show up. No, this is like— I mean, bro, they're— the user's not putting in an API. This is like the only thing that's showing up. This is what ideally, yes, we would just want this, something like this to show up. And this looks pretty good except for like, just this looks a bit AI, but the, the rest of it is pretty— I mean, it's a small thing. Yeah, no, it's not bad.",
-      "confidence": 0.991
+      "text": "Your bank account is going to be locked out of your bank account if that payment is not made in 48 hours. So",
+      "confidence": 0.956
+    },
+    {
+      "time": "0:36",
+      "speaker": "caller",
+      "text": "So I'm going to go ahead and send you a link.",
+      "confidence": 1
+    },
+    {
+      "time": "0:37",
+      "speaker": "user",
+      "text": "I'm going to go ahead and send you a link.",
+      "confidence": 0.997
+    },
+    {
+      "time": "0:39",
+      "speaker": "caller",
+      "text": "Go ahead and click on that link, um,",
+      "confidence": 0.988
+    },
+    {
+      "time": "0:39",
+      "speaker": "user",
+      "text": "Go ahead and click on that link, um, type in your bank info into",
+      "confidence": 0.989
+    },
+    {
+      "time": "0:42",
+      "speaker": "caller",
+      "text": "type in your bank info into the, into the link we give,",
+      "confidence": 0.977
+    },
+    {
+      "time": "0:44",
+      "speaker": "user",
+      "text": "the link we give,",
+      "confidence": 0.887
+    },
+    {
+      "time": "0:46",
+      "speaker": "caller",
+      "text": "and",
+      "confidence": 1
+    },
+    {
+      "time": "0:46",
+      "speaker": "user",
+      "text": "and you",
+      "confidence": 0.999
+    },
+    {
+      "time": "0:47",
+      "speaker": "caller",
+      "text": "you should",
+      "confidence": 1
+    },
+    {
+      "time": "0:47",
+      "speaker": "user",
+      "text": "should be all good.",
+      "confidence": 0.999
+    },
+    {
+      "time": "0:48",
+      "speaker": "caller",
+      "text": "be all good. We will get the $1,000 payment from you shortly.",
+      "confidence": 1
+    },
+    {
+      "time": "0:49",
+      "speaker": "user",
+      "text": "We will get the $1,000 payment. Sure. Oh no, it was my fault. Let me see if it sends anything.",
+      "confidence": 0.956
     },
     {
       "time": "1:00",
       "speaker": "user",
-      "text": "But it looks live coded and you're going to fix that. Ideally, so like this is just sending data to Groq and then Groq sends data to this to output it. And so what we want to end up doing, I think, is this sends data to Groq and to his thing. And then we both send data to you instead of this. And then your thing is a popup and a dashboard that looks mighty fantastic.",
-      "confidence": 0.991
+      "text": "85? How is it only 85? Who cares about the freaking number as long as it's high? High risk. I love this though, bro. Like, I like the UI of this though. You do? It looks so like— it looks so like NSA. It looks like that. We can keep that. Like, your, your thing— make your thing match that a little bit then. No, but obviously it looks 5th thirded, so we need to find a way to make it",
+      "confidence": 0.888
     },
     {
-      "time": "1:30",
+      "time": "1:31",
       "speaker": "user",
-      "text": "Fantastic. I'm feeling the pressure. You're feeling the pressure? It's okay, bro. There's no— we have all day tomorrow. This is just the beginning. You've been at this for like 6 hours. I'm sure AI is crazy. Well then,",
-      "confidence": 0.904
+      "text": "Are we showing this? Like, even this?",
+      "confidence": 0.983
     },
     {
-      "time": "2:01",
-      "speaker": "user",
-      "text": "ScamShield AI. Let's just call it ScamShield. We don't need the AI. ScamShield.tech. Oh, we get a free domain with that. ScamShield.tech. A domain for what, a website? The tech. That's, that's one of the challenges, sponsored challenges. You just got to use their domain and then in the— in a web app. Yeah, we're not doing that. I am doing a web app. How is it going to work with",
-      "confidence": 0.987
+      "time": "1:31",
+      "speaker": "caller",
+      "text": "Are we sure?",
+      "confidence": 0.841
     },
     {
-      "time": "2:30",
-      "speaker": "user",
-      "text": "this? You just said it can't. No, it can't. It won't work with Streamlit. Oh, if I— if it does Next.js, it works. Is this true? Can you confirm if this is true? What is true? Can he use a web app to— can, can the data I sent him— but like, a web app can't have the popup though. I don't, I don't know. He has to figure",
-      "confidence": 0.975
+      "time": "1:32",
+      "speaker": "caller",
+      "text": "Even this.",
+      "confidence": 0.69
     },
     {
-      "time": "3:04",
+      "time": "1:34",
       "speaker": "user",
-      "text": "This thing I'm saying like this, no, but that's not part of the web app, that's part of your system. Well, what we want is that my system just sends something to your system and your system pops it up, I think. Is that how it is? Let me ask Claude after I ask— finish asking Claude what I was going to before because I never finished.",
-      "confidence": 0.98
+      "text": "Should we? We can get rid of that. Oh, it's 90, so it keeps listening. Yeah, it just had to update the second. Oh, now it's 85. We should change it to like 15 seconds. 20? Yeah, I think 20. 50? 50? I think 20. 20 would be fine because then it'll actually give it",
+      "confidence": 0.955
+    },
+    {
+      "time": "2:00",
+      "speaker": "user",
+      "text": "No, no, but it's real time. So even if it says less likely in the first 15 seconds, it's gonna keep updating. Yeah, but I'd rather it say— have a higher chance of saying more likely within 20 seconds than it's saying less likely in 15, then you have to wait 30. You know what I'm saying? Like, you'd have to wait longer because also the 15 seconds is not really 15 seconds. It's gonna end up updating like 25 seconds. It takes like 10 minutes, 10 seconds to process. So what's gonna— what would happen in theory is let's say",
+      "confidence": 0.988
+    },
+    {
+      "time": "2:31",
+      "speaker": "user",
+      "text": "15 seconds isn't enough to detect the scam. So at the 25-second mark, it says low risk, and then you have to wait all the way to the 50-second mark. So you're saying it takes 15 seconds and then it takes 10 seconds to even pop up? Yeah. Why is it so slow? I don't know, but it's fine. We just won't say that it's 20 seconds. All right.",
+      "confidence": 0.981
     }
   ]
 }

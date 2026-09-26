@@ -1,8 +1,57 @@
 {
-  "scam_likelihood": 0,
-  "risk_level": "low",
+  "scam_likelihood": 85,
+  "risk_level": "high",
   "enough_information": true,
-  "summary": "This is a technical discussion about building the ScamShield app with AI tools and web frameworks.",
-  "reasons": [],
-  "recommended_action": "Continue the call."
+  "summary": "Caller claims you have a missed $1,000 car loan payment and threatens to lock your bank account in 48 hours unless you enter bank details into a link they send.",
+  "reasons": [
+    {
+      "category": "impersonation",
+      "explanation": "Caller poses as your bank regarding a loan you supposedly missed.",
+      "evidence": [
+        {
+          "time": "0:15",
+          "quote": "we are calling about your current bank loan that you are missing. We need you to pay off a loan of $1,000."
+        }
+      ]
+    },
+    {
+      "category": "unexpected_debt_or_problem",
+      "explanation": "Claims an unrecognized missed car payment.",
+      "evidence": [
+        {
+          "time": "0:20",
+          "quote": "You missed a payment on your car last month."
+        }
+      ]
+    },
+    {
+      "category": "urgency_or_pressure",
+      "explanation": "Demands payment within 48 hours or account will be locked.",
+      "evidence": [
+        {
+          "time": "0:23",
+          "quote": "If you don't pay that in the next 48 hours, unfortunately your bank is going to be shut down."
+        },
+        {
+          "time": "0:30",
+          "quote": "your bank account is going to be locked out of your bank account if that payment is not made in 48 hours."
+        }
+      ]
+    },
+    {
+      "category": "sensitive_information_request",
+      "explanation": "Asks you to click a link and enter bank info.",
+      "evidence": [
+        {
+          "time": "0:36",
+          "quote": "I'm going to go ahead and send you a link."
+        },
+        {
+          "time": "0:39",
+          "quote": "Go ahead and click on that link, type in your bank info into the link we give."
+        }
+      ]
+    }
+  ],
+  "recommended_action": "Hang up immediately. Call your bank using the number on your card or app to verify any real issues."
 }
