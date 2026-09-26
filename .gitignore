@@ -1,0 +1,9 @@
+# Secrets — never commit
+web/.env.local
+.env.local
+.env*
+
+# Dependencies and build
+node_modules/
+web/node_modules/
+web/.next/

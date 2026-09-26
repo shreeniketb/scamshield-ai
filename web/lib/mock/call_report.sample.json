@@ -1,0 +1,146 @@
+{
+  "schema_version": "1.1",
+  "call_id": "call_20260925_001",
+
+  "circle_id": "circle_nani",
+  "senior_id": "u_nani",
+  "channel": "whatsapp_call",
+  "direction": "incoming",
+  "caller": {
+    "number": "+1 678 555 0142",
+    "display_name": null,
+    "known_contact": false,
+    "matched_member_id": null,
+    "caller_id_status": "not_applicable",
+    "profile_photo_matches_member": "u_aarav"
+  },
+  "started_at": "2026-09-25T18:42:07Z",
+  "ended_at": "2026-09-25T18:43:02Z",
+  "duration_s": 55,
+  "language": "en",
+  "status": "ended",
+
+  "overall": {
+    "risk_score": 0.94,
+    "risk_level": "HIGH",
+    "scam_type": "family_impersonation",
+    "scam_type_label": "Grandparent / family emergency scam",
+    "scam_type_confidence": 0.91,
+    "outcome": "stopped",
+    "outcome_label": "Voice-clone call stopped"
+  },
+
+  "audio_forensics": {
+    "synthetic_probability": 0.87,
+    "classification": "likely_synthetic",
+    "model_confidence": 0.87,
+    "manipulation_type": "zero_shot_tts",
+    "detectors": [
+      {"name": "Deep-learning anti-spoofing (WavLM)", "family": "deep_learning", "score": 0.89, "ran": true, "finding": "Speech embeddings closely match known synthetic voices"},
+      {"name": "Spectral analysis", "family": "spectral", "score": 0.71, "ran": true, "finding": "Unnaturally smooth high-frequency energy typical of neural vocoders"},
+      {"name": "Prosody", "family": "prosody", "score": 0.78, "ran": true, "finding": "Pitch contour flatter than natural speech; no breaths between sentences"},
+      {"name": "Speaker consistency", "family": "speaker_embedding", "score": 0.64, "ran": true, "finding": "Voice identity drifts slightly across the call"},
+      {"name": "Splice detection", "family": "splice", "score": 0.22, "ran": true, "finding": "No obvious edits or background seams"},
+      {"name": "Mains-hum (ENF)", "family": "environment", "score": null, "ran": false, "finding": "Skipped: no stationary mains hum in call audio"}
+    ]
+  },
+
+  "transcript": [
+    {"start": 0.5, "end": 3.1, "speaker": "caller", "text": "Grandma, it's me."},
+    {"start": 3.4, "end": 3.9, "speaker": "senior", "text": "Aarav?"},
+    {"start": 4.0, "end": 8.4, "speaker": "caller", "text": "I got into an accident and I'm in trouble."},
+    {"start": 9.1, "end": 12.8, "speaker": "caller", "text": "Please don't tell Mom."},
+    {"start": 14.2, "end": 19.6, "speaker": "caller", "text": "I need you to send me two thousand dollars right now."},
+    {"start": 20.0, "end": 24.3, "speaker": "caller", "text": "Buy Apple gift cards and send me the codes."},
+    {"start": 31.5, "end": 34.0, "speaker": "senior", "text": "What's our family word?"},
+    {"start": 34.6, "end": 37.2, "speaker": "caller", "text": "Grandma, there's no time for that."}
+  ],
+
+  "signals": {
+    "urgency": 0.96,
+    "secrecy": 0.98,
+    "fear_pressure": 0.82,
+    "family_impersonation": 0.92,
+    "authority_impersonation": 0.05,
+    "financial_request": 0.99,
+    "credential_request": 0.01,
+    "suspicious_payment": 0.99
+  },
+
+  "signal_labels": {
+    "urgency": {"group": "words", "label": "Pressure to act immediately", "explanation": "Scammers rush you so you don't stop to check."},
+    "secrecy": {"group": "words", "label": "Asked to keep it secret", "explanation": "\"Don't tell Mom\" is the most common scam line: secrecy cuts you off from help."},
+    "fear_pressure": {"group": "words", "label": "Emergency story", "explanation": "An accident or arrest story creates panic."},
+    "family_impersonation": {"group": "caller", "label": "Claimed to be family", "explanation": "The caller said they were your grandson from an unknown number."},
+    "authority_impersonation": {"group": "caller", "label": "Claimed to be an official", "explanation": "Police, bank or government impersonation."},
+    "financial_request": {"group": "money", "label": "Asked for money", "explanation": "A direct request to send money."},
+    "credential_request": {"group": "money", "label": "Asked for passwords or codes", "explanation": "Requests for PINs, passwords or verification codes."},
+    "suspicious_payment": {"group": "money", "label": "Gift cards as payment", "explanation": "No real emergency is ever paid with gift cards."}
+  },
+
+  "entities": {
+    "claimed_identity": "grandson",
+    "claimed_member_id": "u_aarav",
+    "claimed_organization": null,
+    "requested_amount": 2000,
+    "currency": "USD",
+    "payment_method": "Apple gift cards",
+    "requested_action": "buy gift cards and send the codes",
+    "deadline": "immediately"
+  },
+
+  "evidence": [
+    {"type": "family_impersonation", "confidence": 0.92, "text": "Grandma, it's me.", "start": 0.5, "end": 3.1},
+    {"type": "secrecy", "confidence": 0.98, "text": "Please don't tell Mom.", "start": 9.1, "end": 12.8},
+    {"type": "financial_request", "confidence": 0.99, "text": "I need you to send me two thousand dollars right now.", "start": 14.2, "end": 19.6},
+    {"type": "suspicious_payment", "confidence": 0.99, "text": "Buy Apple gift cards and send me the codes.", "start": 20.0, "end": 24.3},
+    {"type": "safe_word_evasion", "confidence": 0.9, "text": "Grandma, there's no time for that.", "start": 34.6, "end": 37.2}
+  ],
+
+  "timeline": [
+    {"time": 3.1, "risk": 0.24, "voice_synthetic": 0.71, "trigger": "identity_claim", "label": "Claimed to be Aarav"},
+    {"time": 8.4, "risk": 0.43, "voice_synthetic": 0.79, "trigger": "emergency_pressure", "label": "Accident story"},
+    {"time": 12.8, "risk": 0.66, "voice_synthetic": 0.84, "trigger": "secrecy", "label": "\"Don't tell Mom\""},
+    {"time": 19.6, "risk": 0.85, "voice_synthetic": 0.86, "trigger": "financial_request", "label": "Asked for $2,000"},
+    {"time": 24.3, "risk": 0.94, "voice_synthetic": 0.87, "trigger": "gift_card_request", "label": "Asked for gift cards"},
+    {"time": 37.2, "risk": 0.97, "voice_synthetic": 0.87, "trigger": "safe_word_failed", "label": "Couldn't give safe word"}
+  ],
+
+  "protection": {
+    "actions_taken": [
+      {"time": 12.9, "type": "show_warning", "detail": "Warning shown to Nani: this voice may be computer-generated"},
+      {"time": 13.0, "type": "verify_member", "detail": "Asked Aarav: is this you?", "verify_id": "ver_001"},
+      {"time": 31.0, "type": "prompt_safe_word", "detail": "Prompted Nani to ask for the family safe word"}
+    ],
+    "verification": {
+      "verify_id": "ver_001",
+      "member_id": "u_aarav",
+      "member_name": "Aarav",
+      "status": "denied",
+      "asked_at_s": 13.0,
+      "responded_at_s": 21.5
+    },
+    "safe_word": {"asked": true, "result": "failed", "asked_at_s": 31.5},
+    "senior_hung_up_at_s": 55.0,
+    "family_alerted": [
+      {"member_id": "u_aarav", "at_s": 13.0, "via": "app"},
+      {"member_id": "u_priya", "at_s": 22.0, "via": "app"}
+    ],
+    "linked_payment_id": "pay_001"
+  },
+
+  "community": {
+    "reported": true,
+    "campaign_id": "camp_grandparent_voice",
+    "campaign_name": "Grandparent voice-clone call",
+    "similar_reports_24h": 11
+  },
+
+  "recommended_action": {
+    "severity": "urgent",
+    "message": "Do not send money. Verify the caller using a previously saved phone number or contact a trusted family member."
+  },
+
+  "report_summary": "The call shows strong indicators of a family impersonation scam. The caller used urgency, secrecy, and an immediate financial request involving gift cards. Audio analysis also indicates a high probability of synthetic speech.",
+  "family_summary": "Someone using an AI copy of Aarav's voice called Nani asking for $2,000 in gift cards. Aarav confirmed it wasn't him, the caller couldn't give the family safe word, and Nani hung up. No money was sent."
+}
