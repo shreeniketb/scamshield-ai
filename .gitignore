@@ -122,15 +122,11 @@ work/
 *_predictions.tsv
 *_predictions.csv
 
-test_scores.tsv
-dev_scores.tsv
 
 # ============================================================
 # Generated verification / metric artifacts
 # ============================================================
-dev_metrics.json
-verification.json
-test_inference_verification.json
+
 
 # ============================================================
 # Whisper / HuggingFace / ML caches
@@ -156,9 +152,7 @@ dist/
 # ============================================================
 # Local generated audio processing
 # ============================================================
-work/normalized/
-work/transcriptions/
-work/features/
+
 
 # ============================================================
 # Misc temporary artifacts
