@@ -1,0 +1,6 @@
+torch>=2.6,<3
+torchaudio>=2.6,<3
+faster-whisper>=1.1,<2
+transformers>=4.48,<5
+numpy>=1.26,<3
+soundfile>=0.13,<1

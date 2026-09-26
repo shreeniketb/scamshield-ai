@@ -1,0 +1,168 @@
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.so
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# ============================================================
+# Virtual environments
+# ============================================================
+.venv/
+venv/
+env/
+ENV/
+
+# ============================================================
+# IDE / Editor
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ============================================================
+# OS files
+# ============================================================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ============================================================
+# Environment / secrets
+# ============================================================
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# ============================================================
+# Logs / temporary files
+# ============================================================
+*.log
+logs/
+tmp/
+temp/
+.cache/
+
+# ============================================================
+# Large datasets
+# ============================================================
+data/
+dataset/
+datasets/
+
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.7z
+*.rar
+
+# ============================================================
+# Audio / generated media
+# Uncomment individual formats if small samples should be kept
+# ============================================================
+*.wav
+*.flac
+*.mp3
+*.m4a
+*.ogg
+
+# Allow explicitly committed test fixtures if needed
+!tests/fixtures/**
+!test/fixtures/**
+
+# ============================================================
+# Model checkpoints / weights
+# ============================================================
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+*.onnx
+
+checkpoints/
+weights/
+models/weights/
+
+# ============================================================
+# Training outputs / experiment artifacts
+# ============================================================
+results/
+exp_result/
+experiments/
+runs/
+wandb/
+lightning_logs/
+
+# TensorBoard
+events.out.tfevents.*
+
+# ============================================================
+# HackGT generated manifests / predictions
+# ============================================================
+data/hearsay/
+work/
+
+*_scores.tsv
+*_scores.csv
+*_predictions.tsv
+*_predictions.csv
+
+test_scores.tsv
+dev_scores.tsv
+
+# ============================================================
+# Generated verification / metric artifacts
+# ============================================================
+dev_metrics.json
+verification.json
+test_inference_verification.json
+
+# ============================================================
+# Whisper / HuggingFace / ML caches
+# ============================================================
+.huggingface/
+huggingface/
+hf_cache/
+torch_cache/
+
+# ============================================================
+# Jupyter
+# ============================================================
+.ipynb_checkpoints/
+
+# ============================================================
+# Build / packaging
+# ============================================================
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ============================================================
+# Local generated audio processing
+# ============================================================
+work/normalized/
+work/transcriptions/
+work/features/
+
+# ============================================================
+# Misc temporary artifacts
+# ============================================================
+*.tmp
+*.bak
+*.orig

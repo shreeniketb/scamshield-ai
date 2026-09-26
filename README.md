@@ -1,6 +1,7 @@
 # scamshield-ai
 
-Compartment 1: Audio normalization
+### Compartment 1: Audio normalization
+
 This is the first layer.
 Responsibility
 Take whatever audio Part A gives you and convert it into something all downstream models understand.
@@ -12,17 +13,23 @@ Tasks
 - normalize amplitude
 - preserve duration and timestamps
 - optionally chunk long audio
-  Input
-  incoming_call.wav
+
+Input
+
+incoming_call.wav
 
 or another audio format.
+
 Output
+
 normalized_audio.wav
 duration = 48.7 seconds
 sample_rate = 16000
 
 This module should not perform fraud detection.
-Compartment 2: Synthetic voice detection
+
+### Compartment 2: Synthetic voice detection
+
 This is the NSA HEARSAY component.
 Responsibility
 Determine:
@@ -30,6 +37,9 @@ Does this audio appear to be genuine human speech or synthetic/cloned speech?
 
 Model
 Something like:
+
+```
+
 Audio
 ↓
 WavLM / HuBERT / wav2vec
@@ -38,29 +48,44 @@ Classifier
 ↓
 P(synthetic)
 
+```
+
 Potentially ensemble it with:
 Spectrogram → CNN
 
 Output
 For the hackathon app:
+
+```
+
 {
 "synthetic_probability": 0.87,
 "classification": "likely_synthetic"
 }
 
+```
+
 For the NSA competition:
 filename score
+
+```
+
 audio_001.wav 0.87
 audio_002.wav 0.03
 
+```
+
 This should remain a standalone module because you need to evaluate it separately using the NSA minDCF metric.
-Compartment 3: Speech-to-text
+
+### Compartment 3: Speech-to-text
+
 Responsibility
 Turn the call into text while keeping timestamps.
 Use Whisper or another ASR system.
 Input
 normalized_audio.wav
 
+```
 Output
 [
 {
@@ -79,9 +104,12 @@ Output
 "text": "Please don't tell Mom."
 }
 ]
+```
 
 This becomes the input for Grok.
-Compartment 4: Grok semantic scam analysis
+
+### Compartment 4: Grok semantic scam analysis
+
 This is where Grok becomes useful.
 The question Grok answers is not:
 Is this synthetic?
@@ -119,6 +147,8 @@ Detect
 - target/victim
 - scam type
   Example output
+
+```
   {
   "scam_type": "family_impersonation",
   "scam_type_confidence": 0.92,
@@ -137,14 +167,18 @@ Detect
   "payment_method": "gift_cards"
   }
   }
+```
 
-Compartment 5: Evidence extraction
+### Compartment 5: Evidence extraction
+
 This is critical for Part C.
 Don't just return:
 secrecy = 97%
 
 Return why.
 Example
+
+```
 {
 "signal": "secrecy",
 "confidence": 0.97,
@@ -152,8 +186,11 @@ Example
 "start": 10.8,
 "end": 14.1
 }
+```
 
 Another:
+
+```
 {
 "signal": "financial_request",
 "confidence": 0.99,
@@ -161,11 +198,16 @@ Another:
 "start": 22.1,
 "end": 27.4
 }
+```
 
 This lets the dashboard highlight exact moments.
-Compartment 6: Timeline analysis
+
+### Compartment 6: Timeline analysis
+
 Build risk through the conversation.
 For every segment:
+
+```
 timestamp
 ↓
 detected behavior
@@ -197,9 +239,12 @@ Risk: 85%
 "Buy gift cards."
 Suspicious payment
 Risk: 96%
+```
 
 This gives your dashboard a very nice risk-over-time visualization.
-Compartment 7: Risk fusion
+
+### Compartment 7: Risk fusion
+
 This combines the audio model and semantic model.
 You do not want Grok to arbitrarily invent one final probability.
 Instead:
@@ -227,12 +272,14 @@ Where:
 - \(F\) = financial request
 - \(P\) = suspicious payment
   For the hackathon, weights can initially be manually chosen and later tuned.
-  Compartment 8: Recommended action
-  Part B should also tell Part C what action is appropriate.
-  For example:
-  {
-  "recommended_action": "Verify the caller using a previously saved phone number before sending money."
-  }
+
+### Compartment 8: Recommended action
+
+Part B should also tell Part C what action is appropriate.
+For example:
+{
+"recommended_action": "Verify the caller using a previously saved phone number before sending money."
+}
 
 Possible actions:
 
@@ -250,3 +297,7 @@ Possible actions:
   result = analyze_call(audio_file)
 
 And receive one structured result.
+
+```
+
+```
