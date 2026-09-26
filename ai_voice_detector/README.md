@@ -2,6 +2,12 @@
 
 Small standalone module for classifying speech audio as **AI-generated** or **real** using AASIST.
 
+Install the required dependencies before running the detector:
+
+```bash
+pip install -r ai_voice_detector/requirements.txt
+```
+
 ## Usage
 
 ```python
