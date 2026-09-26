@@ -1,0 +1,50 @@
+ScamShield API contract (shared with Kale's desktop app — do not change without telling the team)
+
+Base URL: https://scamshield.tech/api — all JSON, all times ISO-8601 UTC. Demo circle: id "circle_nani". Senior u_nani (Nani). Members u_aarav (Aarav, grandson, priority 1), u_priya (Priya, daughter, priority 2).
+
+Events from Kale's desktop app
+POST /api/events/message_check
+
+Request: {"id":"msg_001","circle_id":"circle_nani","senior_id":"u_nani","channel":"whatsapp","sender":"+1 404 555 0199", "text":"Grandma it's me, I'm in trouble, please don't tell mom","scam_probability":0.94,"scam_type":"grandparent_distress", "red_flags":["urgency","asks for secrecy","unknown number"], "explanation":"This looks like a scam. Real grandchildren don't ask you to keep secrets from family.", "claimed_identity":"grandson","created_at":"2026-09-26T14:02:11Z"}
+
+POST /api/events/call_report — sent by the desktop app when a call or message analysis is complete. Body = contract/samples/call_report.sample.json shape. The live POST /api/events/call_analysis chunks remain for real-time triggers (verify, safe word, warnings) during the call.
+
+POST /api/events/call_analysis (sent every few seconds during a call)
+
+Request: {"id":"call_001","circle_id":"circle_nani","senior_id":"u_nani","channel":"whatsapp_call","caller":"+1 678 555 0142", "caller_id_status":"not_applicable","chunk_index":3,"voice_synthetic_score":0.87,"manipulation_type":"tts", "transcript_snippet":"it's me grandma, I'm on a friend's phone, I need bail money", "script_cues":["claimed_family","new_number_excuse","bail","secrecy"],"claimed_identity":"grandson","risk":0.9, "created_at":"2026-09-26T14:05:40Z"} caller_id_status ∈ passed | failed | not_verified | not_applicable.
+
+Response to BOTH event types
+
+{"ok":true,"risk":0.9,"actions":[ {"type":"prompt_safe_word","message":"Ask the caller for your family safe word."}, {"type":"verify_member","member_id":"u_aarav","verify_id":"ver_001"}, {"type":"show_warning","severity":"critical","message":"This voice may be computer-generated."}]}
+
+Rules:
+
+Always store the event and create an alert (severity by risk: <0.4 info, <0.7 warning, else critical).
+verify_member: if claimed_identity maps to a member by relation (grandson→u_aarav, daughter→u_priya) AND that member has can_verify=true AND risk ≥ 0.6 → create a verify request (expires after rules.verify_timeout_s), unless one is already pending for the same event id. Also create it when the caller's number matches a member but the text or transcript asks for money.
+prompt_safe_word: when a safe word is set AND any enabled rule matches: unknown_caller_asks_money (caller not in members' phones AND script_cues include bail/money/gift_cards), voice_clone_score_above_0.7, claims_family (claimed_identity present).
+show_warning: when risk ≥ 0.7.
+Verification
+GET /api/verify/pending?member_id=u_aarav → the newest pending request or null (expire any past expires_at first; expiry → critical alert).
+GET /api/verify/{id} → the request.
+POST /api/verify/{id}/respond body {"response":"me"|"not_me"} → updated request. "not_me" → critical alert. Verify request shape: {"id":"ver_001","circle_id":"circle_nani","senior_id":"u_nani","claimed_member_id":"u_aarav","claimed_member_name":"Aarav", "reason":"Someone claiming to be you is on a WhatsApp call with Nani right now.","source_event_id":"call_001", "status":"pending","created_at":"...","expires_at":"...","responded_at":null} status ∈ pending | confirmed | denied | expired.
+Payments
+POST /api/payments/attempt body {"circle_id","senior_id","merchant","method","amount"} situation_risk (capped at 1) = +0.35 if method ∈ gift_card|crypto|wire; +0.30 if a flagged event (risk ≥ 0.6) in the last 30 min; +0.25 if a verify was denied or expired in the last 30 min; +0.10 if amount > 200. status "held" if ≥ 0.6, else "auto_ok". Held → attention alert.
+POST /api/payments/{id}/decide body {"member_id":"u_priya","decision":"approved"|"declined"}
+GET /api/payments?circle_id=circle_nani Payment shape: {"id":"pay_001","circle_id":"circle_nani","senior_id":"u_nani","merchant":"Gift cards (online)","method":"gift_card","amount":500, "situation_risk":0.91,"top_factors":[{"label":"Gift-card payment","weight":0.35},{"label":"11 minutes after a flagged call","weight":0.30}, {"label":"Aarav said 'NOT me'","weight":0.25}],"status":"held","decided_by":null,"created_at":"..."}
+Alerts
+GET /api/alerts?circle_id=circle_nani → newest first. Alert shape: {"id":"al_001","circle_id":"circle_nani","kind":"message|call|verify|payment|campaign","severity":"info|warning|critical", "title":"Possible voice-clone call to Nani","body":"A caller claiming to be Aarav asked for bail money.","ref_id":"call_001", "created_at":"...","seen":false}
+Circle, settings, safe word
+GET /api/circle/{id} → {"id","senior":{"id","name"},"members":[...],"safe_word_set":bool, "health":{"last_contact_days":6,"calls_this_week":1,"threats_caught_30d":4,"payments_held_30d":1,"dollars_protected_30d":500}}
+GET/PUT /api/circle/{id}/settings → {"circle_id","members":[{"id","name","relation","phone","email","priority","notify_via":["app","email"],"can_verify":true}], "safe_word_set":bool, "rules":{"prompt_safe_word_when":["unknown_caller_asks_money","voice_clone_score_above_0.7","claims_family"], "verify_timeout_s":30,"hold_payments_after_flag_min":30}} NEVER include the safe word itself.
+PUT /api/circle/{id}/safe-word body {"safe_word":"..."} → {"ok":true,"safe_word_set":true}
+GET /api/circle/{id}/safe-word-check-material (header X-Device-Token must equal env DEVICE_TOKEN, else 401) → {"safe_word":"..."}
+POST /api/events/safe_word_result body {"call_id":"call_001","result":"passed"|"failed"|"not_asked"} → failed = critical alert.
+Community (read from JSON files in web/data/)
+GET /api/community/summary → {"active_campaigns_24h":7,"circles_warned_before_exposure":38,"payments_held":12,"dollars_protected":8400,"voice_clones_caught":5,"data_label":"Demo data"}
+GET /api/community/campaigns → [{"id","name","channels":["sms","call","voice"],"reports_24h":14,"trend":[24 hourly numbers], "first_seen","areas":["30318"],"example_redacted":"... [link] ...","how_to_spot":"...","severity":"info|warning|critical"}]
+GET /api/community/campaigns/{id}/points → {"campaign_id","points":[{"x","y","variant":0,"text_redacted","first_seen"}]}
+GET /api/community/map → [{"zip":"30318","lat":33.79,"lon":-84.44,"reports_24h":6}]
+GET /api/community/states → [{"state":"FL","losses_usd":0,"complaints":0}]
+Demo
+POST /api/demo/reset → clears events, alerts, verifies, payments; re-seeds circle_nani with default members and rules, no safe word.
+Seeding also happens automatically on the first request if the circle doesn't exist.

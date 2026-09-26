@@ -1,0 +1,86 @@
+---
+description: ScamShield project brief, stack and design system
+alwaysApply: true
+---
+ScamShield — project brief
+Product
+
+ScamShield protects older adults from scams by bringing their family into the moment of decision. Domain: scamshield.tech.
+
+Senior = "Nani". Her side is a DESKTOP app built by teammate Kale in /desktop (C# WPF, .NET 8). On Shree-Branch never edit /desktop. On Shreekale, integration changes to /desktop are allowed: keep them in small, separate new files where possible and leave Kale's existing logic intact.
+Family = Aarav (grandson) and Priya (daughter). They use the mobile web app at /family.
+Community = /community dashboard of live scam campaigns in Atlanta.
+The demo climax: a voice-cloned "grandson" calls Nani on WhatsApp → Kale's app detects it → Aarav's phone shows "Is this you?" → he taps NOT me → Nani is told to hang up → her $500 gift-card payment is held → Priya declines it.
+Pitch line: "Every scam says 'don't tell anyone.' ScamShield makes sure you do."
+The owner is not a software engineer
+After every task, explain what you did in 2 plain-English sentences, and tell me exactly how to see it (URL/page).
+Prefer simple, readable code. Small files. Clear names. No clever abstractions.
+Before running a command that installs, deletes, or deploys, say what it does in one line.
+Never commit secrets. Keys live in web/.env.local (gitignored) and in Vercel environment variables.
+Work one step at a time; don't start the next feature unless asked.
+Git: commit and push only to Shree-Branch (web-only work) or Shreekale (integration of web + Kale's desktop app). Never push to main or to Kale's branch, and never delete anything from Shree-Branch. Only switch or merge branches when the owner asks. Before any commit, run `git branch --show-current` and stop if it isn't one of those two.
+Before building any UI, read docs/DESIGN_SPEC.md and follow it exactly.
+Build work follows docs/BUILD_PLAN.md — execute only the phase I ask for, then stop.
+Stack (don't change without asking)
+Next.js (App Router) + TypeScript + Tailwind CSS, in the folder web/.
+Server = Next.js API routes in web/app/api/**/route.ts. Deployed on Vercel.
+Database: MongoDB Atlas via the official mongodb driver, with a cached client in web/lib/db.ts. Database name "kin".
+Charts: Recharts. Map: maplibre-gl with style https://tiles.openfreemap.org/styles/liberty (client-only component).
+Icons: lucide-react. Fonts: next/font/google (Fraunces + Inter).
+All data shapes and endpoints MUST follow contract/CONTRACT.md exactly. Kale's desktop app depends on it.
+Add CORS headers (allow all origins) on every /api route.
+Design system — "Warm Sentinel"
+
+Feeling: calm, human, trustworthy. A well-made banking app crossed with a family photo album. Never alarmist: no flashing, no red walls. Red only for critical/held.
+
+Colours (CSS variables + Tailwind theme):
+
+paper 
+#F7F4EE (page bg), surface 
+#FFFFFF, ink 
+#1C2230, muted 
+#5B6474, line 
+#E7E1D6
+brand 
+#0F5257 (deep teal), brand-soft 
+#E3F0EE
+attention text 
+#8A5A0B on attention-soft 
+#FBF1DE
+critical 
+#B42318 on critical-soft 
+#FDECEA
+safe 
+#2F7D4F on safe-soft 
+#E6F4EA
+chart palette (colour-blind safe): 
+#0072B2 
+#E69F00 
+#009E73 
+#CC79A7 
+#56B4E9 
+#D55E00
+
+Type:
+
+Headings "Fraunces" (warm serif); UI/body "Inter"; numbers use tabular figures.
+Base size 16px; on /family minimum 18px; big stat numbers 40–56px.
+
+Shape, depth and spacing:
+
+Radius 16px cards, 24px sheets/modals, 999px pills.
+Shadow: 0 1px 2px rgba(28,34,48,.06), 0 8px 24px rgba(28,34,48,.06).
+Spacing: generous — 24px card padding desktop, 20px mobile.
+
+Motion: 150–250ms ease-out; sheets slide up; respect prefers-reduced-motion.
+
+Accessibility:
+
+WCAG AA contrast; visible focus rings in brand colour.
+Tap targets ≥ 48px.
+Never colour alone (icon + word).
+aria-labels on icon buttons.
+
+Copy voice: warm, specific, never shaming ("Good call checking," not "You almost got scammed").
+
+Every view showing simulated data shows a small "Demo data" tag.
