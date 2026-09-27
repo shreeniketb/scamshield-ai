@@ -152,7 +152,9 @@ namespace ScamDetector
                 ["risk"]                  = knownCaller ? 0.1 : Math.Clamp(verdict.ScamLikelihood, 0, 100) / 100.0,
                 ["voice_synthetic_score"] = voiceScore,
                 ["scam_type"]             = Blank(verdict.ScamType),
-                ["claimed_identity"]      = Blank(verdict.ClaimedIdentity),
+                ["claimed_identity"]      = FamilyDashboardContext.ShouldHoldForVerify(verdict, out var impersonated) && impersonated != null
+                                                ? impersonated.Relation
+                                                : Blank(verdict.ClaimedIdentity),
                 ["claimed_organization"]  = Blank(verdict.ClaimedOrganization),
                 ["requested_amount"]      = knownCaller || verdict.RequestedAmount <= 0 ? null : verdict.RequestedAmount,
                 ["payment_method"]        = Blank(verdict.PaymentMethod),

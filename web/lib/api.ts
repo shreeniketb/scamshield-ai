@@ -188,16 +188,17 @@ export async function getScamTypes(): Promise<ScamTypeTotal[]> {
 
 // ── Verification ("Is this {name}?") ──────────────────────────────────────
 
-export async function getPendingVerify(memberId: string): Promise<VerifyRequest | null> {
+export async function getPendingVerify(memberId?: string): Promise<VerifyRequest | null> {
   if (!useMocks) {
-    return realGet<VerifyRequest | null>(`/api/verify/pending?member_id=${memberId}`);
+    const query = memberId ? `?member_id=${memberId}` : "";
+    return realGet<VerifyRequest | null>(`/api/verify/pending${query}`);
   }
   expireOldVerifies();
   const now = Date.now();
   const pending = getStore()
     .verifies.filter(
       (item) =>
-        item.claimed_member_id === memberId &&
+        (!memberId || item.claimed_member_id === memberId) &&
         item.status === "pending" &&
         Date.parse(item.expires_at) > now,
     )

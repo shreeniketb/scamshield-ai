@@ -21,9 +21,14 @@ function mulberry32(seed: number) {
 
 function hourlyTrend(seed: number, hours: number, peak: number) {
   const rand = mulberry32(seed);
+  const rate = 1.8 + rand() * 0.6;
+  const lift = 0.08 + rand() * 0.45;
   return Array.from({ length: hours }, (_, i) => {
-    const wave = Math.sin((i / hours) * Math.PI) * peak;
-    return Math.max(0, Math.round(wave + rand() * 3));
+    const t = i / (hours - 1);
+    const base = peak * (1 - Math.exp(-rate * t));
+    const late = t > 0.62 ? peak * lift * ((t - 0.62) / 0.38) : 0;
+    const wobble = Math.sin(t * Math.PI * 4) * peak * 0.035;
+    return Math.max(0, Math.round(base + late + wobble + rand() * Math.max(1, peak * 0.05)));
   });
 }
 

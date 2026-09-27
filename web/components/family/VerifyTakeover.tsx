@@ -14,7 +14,7 @@ function remainingSeconds(verify: VerifyRequest) {
   return Math.max(0, Math.ceil((Date.parse(verify.expires_at) - Date.now()) / 1000));
 }
 
-export function VerifyTakeover({ memberId = "u_aarav" }: { memberId?: string }) {
+export function VerifyTakeover({ memberId }: { memberId?: string }) {
   const [verify, setVerify] = useState<VerifyRequest | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [seconds, setSeconds] = useState(30);
@@ -25,6 +25,7 @@ export function VerifyTakeover({ memberId = "u_aarav" }: { memberId?: string }) 
 
     const apply = (next: VerifyRequest | null) => {
       if (!active || !next || next.status !== "pending") return;
+      if (memberId && next.claimed_member_id !== memberId) return;
       if (seenIds.current.has(next.id)) return;
       if (remainingSeconds(next) <= 0) return;
       seenIds.current.add(next.id);
@@ -37,21 +38,27 @@ export function VerifyTakeover({ memberId = "u_aarav" }: { memberId?: string }) 
     };
 
     const poll = async () => {
-      const pending = await getPendingVerify(memberId);
-      apply(pending);
+      try {
+        apply(await getPendingVerify(memberId));
+      } catch {
+        // Keep polling; a single failed request should not stop the next one.
+      }
     };
 
     void poll();
     const pollId = window.setInterval(() => void poll(), 2000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void poll();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     const unsubscribe = subscribeBus((message) => {
-      if (message.type === "verify_pending" && message.verify.claimed_member_id === memberId) {
-        apply(message.verify);
-      }
+      if (message.type === "verify_pending") apply(message.verify);
     });
 
     return () => {
       active = false;
       window.clearInterval(pollId);
+      document.removeEventListener("visibilitychange", onVisible);
       unsubscribe();
     };
   }, [memberId]);

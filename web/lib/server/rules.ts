@@ -1,4 +1,5 @@
 import type { Db } from "mongodb";
+import { memberFromClaimed, memberFromTexts } from "../claimedIdentity";
 import type { CircleMember, VerifyRequest } from "../types";
 import { holdForVerify, isThisName, verifyReason } from "../verifyCopy";
 import { createAlert, severityForRisk, upsertEventAlert } from "./alerts";
@@ -31,12 +32,21 @@ export function riskOf(body: { risk?: unknown; scam_probability?: unknown }) {
   return clampRisk(body.risk ?? body.scam_probability);
 }
 
-function memberByClaimed(circle: CircleDoc, claimed: string | null | undefined) {
-  if (!claimed) return undefined;
-  const wanted = claimed.trim().toLowerCase();
-  return circle.members.find(
-    (member) => member.relation.toLowerCase() === wanted || member.name.toLowerCase() === wanted,
-  );
+function resolveImpersonated(
+  circle: CircleDoc,
+  event: MessageCheckEvent | CallAnalysisEvent,
+) {
+  const claimed = memberFromClaimed(circle.members, event.claimed_identity);
+  if (claimed) return claimed;
+  if (event.type === "call_analysis") {
+    return memberFromTexts(circle.members, [
+      event.explanation,
+      event.transcript_snippet,
+      event.recommended_action,
+      event.transcript,
+    ]);
+  }
+  return memberFromTexts(circle.members, [event.explanation, event.text]);
 }
 
 function alertCopy(
@@ -150,7 +160,7 @@ export async function processEvent(
   const voice = isCall ? event.voice_synthetic_score ?? 0 : 0;
   const moneyAsked = asksForMoney(cues, text);
 
-  const claimed = memberByClaimed(circle, event.claimed_identity);
+  const claimed = resolveImpersonated(circle, event);
 
   await upsertEventAlert(db, {
     circle_id: circle.id,
@@ -162,15 +172,16 @@ export async function processEvent(
 
   const actions: Action[] = [];
   const impersonatingCircle = Boolean(claimed) && event.risk >= 0.4;
+  const method = circle.rules.protection_method ?? "verify_member";
 
-  if (impersonatingCircle && circle.safe_word) {
+  if (impersonatingCircle && method === "safe_word") {
     actions.push({
       type: "prompt_safe_word",
       message: "Ask the caller for your family safe word. If they cannot say it, hang up immediately.",
     });
   }
 
-  if (impersonatingCircle && claimed?.can_verify) {
+  if (impersonatingCircle && method === "verify_member" && claimed) {
     const verify = await ensureVerify(db, circle, claimed, event);
     actions.push({
       type: "verify_member",

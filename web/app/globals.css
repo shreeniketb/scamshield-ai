@@ -103,6 +103,40 @@ h3,
   animation: toast-in 180ms ease-out;
 }
 
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.live-dot {
+  animation: live-pulse 2s ease-out infinite;
+}
+
+@keyframes warn-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.warn-edge {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: warn-draw 0.9s ease-out both;
+}
+
+.atlanta-map .maplibregl-ctrl-group button {
+  width: 48px;
+  height: 48px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -110,5 +144,20 @@ h3,
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .warn-edge {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
   }
 }
