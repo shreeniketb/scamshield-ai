@@ -29,7 +29,7 @@ export default async function FamilyHomePage() {
   const typeCounts = new Map<string, number>();
   for (const item of weekLive) {
     const label = item.scam_type_label || "Unclassified";
-    if (item.risk_score < 0.4) continue;
+    if (item.risk_score < 0.6) continue;
     typeCounts.set(label, (typeCounts.get(label) ?? 0) + 1);
   }
   const scamTypesThisWeek = [...typeCounts.entries()].sort((a, b) => b[1] - a[1]);
@@ -57,14 +57,14 @@ export default async function FamilyHomePage() {
 
       <section>
         <h2 className="mb-2 font-display text-xl">Quick actions</h2>
-        <div className="grid grid-cols-2 gap-2">
-          <a className="inline-flex min-h-12 items-center justify-center rounded-card bg-brand-soft text-brand" href="tel:+14045550100">
+        <div className="grid grid-cols-2 auto-rows-fr gap-2">
+          <a className="inline-flex h-full min-h-12 items-center justify-center rounded-card bg-brand-soft text-brand" href="tel:+14045550100">
             Call Nani
           </a>
-          <Link className="inline-flex min-h-12 items-center justify-center rounded-card bg-brand-soft text-brand" href="/family/circle">
+          <Link className="inline-flex h-full min-h-12 items-center justify-center rounded-card bg-brand-soft text-brand" href="/family/circle">
             Safe word
           </Link>
-          <Link className="inline-flex min-h-12 items-center justify-center rounded-card bg-brand-soft text-brand" href="/family/circle">
+          <Link className="inline-flex h-full min-h-12 items-center justify-center rounded-card bg-brand-soft text-brand" href="/family/circle">
             Contacts
           </Link>
           <WarnCommunityButton callId={latestLive?.id ?? null} />

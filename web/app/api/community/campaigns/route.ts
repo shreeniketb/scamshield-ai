@@ -12,6 +12,6 @@ export async function POST(request: Request) {
   if (!body?.call_id) return badRequest("call_id is required");
   const db = await getSeededDb();
   const campaign = await createCampaignFromCall(db, body.call_id);
-  if (!campaign) return badRequest("No call found to warn the community about");
+  if (!campaign) return badRequest("No high-risk call found to warn the community about");
   return json({ ok: true, campaign });
 }

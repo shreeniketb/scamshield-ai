@@ -20,13 +20,13 @@ Response to BOTH event types
 Rules:
 
 Always store the event and create an alert (severity by risk: <0.4 info, <0.7 warning, else critical).
-verify_member: if claimed_identity maps to a member by relation (grandson→u_aarav, daughter→u_priya) AND that member has can_verify=true AND risk ≥ 0.6 → create a verify request (expires after rules.verify_timeout_s), unless one is already pending for the same event id. Also create it when the caller's number matches a member but the text or transcript asks for money.
-prompt_safe_word: when a safe word is set AND any enabled rule matches: unknown_caller_asks_money (caller not in members' phones AND script_cues include bail/money/gift_cards), voice_clone_score_above_0.7, claims_family (claimed_identity present).
+verify_member: if claimed_identity maps to a circle member by relation or name AND that member has can_verify=true AND risk ≥ 0.4 (medium or high) → create a verify request (expires after rules.verify_timeout_s), unless one is already pending for the same event id. This happens regardless of protection_method. The family-app prompt uses the member's name ("Is this Vanessa?"). The desktop pop-up only shows a phone number, verification message, or safe-word check in this same impersonation + medium/high case.
+prompt_safe_word: only when a safe word is set AND claimed_identity maps to a circle member AND risk ≥ 0.4.
 show_warning: when risk ≥ 0.7.
 Verification
 GET /api/verify/pending?member_id=u_aarav → the newest pending request or null (expire any past expires_at first; expiry → critical alert).
 GET /api/verify/{id} → the request.
-POST /api/verify/{id}/respond body {"response":"me"|"not_me"} → updated request. "not_me" → critical alert. Verify request shape: {"id":"ver_001","circle_id":"circle_nani","senior_id":"u_nani","claimed_member_id":"u_aarav","claimed_member_name":"Kale", "reason":"Someone claiming to be you is on a WhatsApp call with Nani right now.","source_event_id":"call_001", "status":"pending","created_at":"...","expires_at":"...","responded_at":null} status ∈ pending | confirmed | denied | expired.
+POST /api/verify/{id}/respond body {"response":"me"|"not_me"} → updated request. "not_me" → critical alert. Verify request shape: {"id":"ver_001","circle_id":"circle_nani","senior_id":"u_nani","claimed_member_id":"u_aarav","claimed_member_name":"Kale", "reason":"Someone claiming to be Kale is on a WhatsApp call with Nani right now.","source_event_id":"call_001", "status":"pending","created_at":"...","expires_at":"...","responded_at":null} status ∈ pending | confirmed | denied | expired.
 Payments
 POST /api/payments/attempt body {"circle_id","senior_id","merchant","method","amount"} situation_risk (capped at 1) = +0.35 if method ∈ gift_card|crypto|wire; +0.30 if a flagged event (risk ≥ 0.6) in the last 30 min; +0.25 if a verify was denied or expired in the last 30 min; +0.10 if amount > 200. status "held" if ≥ 0.6, else "auto_ok". Held → attention alert.
 POST /api/payments/{id}/decide body {"member_id":"u_priya","decision":"approved"|"declined"}
@@ -44,7 +44,7 @@ GET /api/community/summary → {"active_campaigns_24h":7,"circles_warned_before_
 GET /api/community/campaigns → [{"id","name","channels":["sms","call","voice"],"reports_24h":14,"trend":[24 hourly numbers], "first_seen","areas":["30318"],"example_redacted":"... [link] ...","how_to_spot":"...","severity":"info|warning|critical"}]
 GET /api/community/campaigns/{id}/points → {"campaign_id","points":[{"x","y","variant":0,"text_redacted","first_seen"}]}
 GET /api/community/map → [{"zip":"30318","lat":33.79,"lon":-84.44,"reports_24h":6}]
-GET /api/community/states → [{"state":"FL","losses_usd":0,"complaints":0}]
+GET /api/community/states → [{"state":"FL","losses_usd":709823172,"complaints":17147}] FBI IC3 2025 elder fraud (age 60+), one row per state. Seeded into MongoDB collection community_states. Not demo data.
 Demo
 POST /api/demo/reset → clears events, alerts, verifies, payments; re-seeds circle_nani with default members and rules, no safe word.
 Seeding also happens automatically on the first request if the circle doesn't exist.
@@ -52,16 +52,16 @@ Reset and seeding keep the circle and member IDs. Old dummy incidents are remove
 
 Additions (Phase 8 — additive only, nothing above changed)
 
-Optional extra fields the desktop app MAY send on POST /api/events/call_analysis: "scam_type" (e.g. "family_impersonation", "bank_impersonation", "utility_shutoff", "medicare", "toll", "delivery", "irs_refund", "government_impersonation", "tech_support"), "explanation" (one plain sentence for the family), "recommended_action" (what Nani was told). script_cues may also use Grok's reason categories (urgency_or_pressure, secrecy_or_isolation, unusual_payment_method, impersonation, threats, sensitive_information_request, too_good_to_be_true, unexpected_debt_or_problem).
+Optional extra fields the desktop app MAY send on POST /api/events/call_analysis: "manual_stop" (true when Nani taps Stop Recording because she recognized the caller — server treats the call as known/not a scam and notes that in the Grok family summary), "scam_type" (e.g. "family_impersonation", "bank_impersonation", "utility_shutoff", "medicare", "toll", "delivery", "irs_refund", "government_impersonation", "tech_support"), "explanation" (one plain sentence for the family), "recommended_action" (what Nani was told). script_cues may also use Grok's reason categories (urgency_or_pressure, secrecy_or_isolation, unusual_payment_method, impersonation, threats, sensitive_information_request, too_good_to_be_true, unexpected_debt_or_problem).
 Full example of what the desktop app sends after each Grok verdict: contract/samples/call_analysis.desktop.sample.json. Where each field comes from:
 - From Grok (add to its JSON schema): risk = scam_likelihood / 100, explanation = summary, reasons (+ script_cues = their categories), recommended_action, scam_type, claimed_identity (grandson | daughter | … | null), claimed_organization, requested_amount, payment_method (gift_cards | cash | wire | crypto | bank_transfer | payment_app | null). transcript_snippet = the newest caller quote. The desktop may send "" / "none" / 0 for "not given" (Grok's strict schema has no null); the server stores those as null.
 - From the desktop app (ScamShieldApi.cs + DashboardBridge.cs at the repo root on main): id (one per call), chunk_index, caller, caller_id_status, created_at (UTC), started_at (UTC, when recording began), duration_s (elapsed seconds on the desktop, not from Grok), transcript (full AssemblyAI text so far), voice_synthetic_score (from Kale's AI voice detector when it ran). After each Grok verdict the app POSTs this body, then polls GET /api/verify/{id} so Nani is told if family answers "NOT me".
 POST /api/community/campaigns body {"call_id"} → creates a Community Watch campaign from that call's Grok summary (or returns the one already created).
 - From the server, never sent by the desktop: Nani's location (circle profile, ZIP 30318), money protected (held/declined payments), verify and safe-word outcomes, all statistics.
 scam_type values: family_impersonation, bank_impersonation, government_impersonation, irs_refund, medicare, utility_shutoff, toll, delivery, tech_support, prize_lottery, investment_crypto, romance. Gift cards and cash are payment_method values, not scam types.
-Repeated chunks for the same call id return the same verify_member verify_id (one "Is this you?" per call); poll GET /api/verify/{id} for the answer. Alerts: one per call/message id, updated (and resurfaced) when severity rises.
+Repeated chunks for the same call id return the same verify_member verify_id (one "Is this {name}?" per call); poll GET /api/verify/{id} for the answer. Alerts: one per call/message id, updated (and resurfaced) when severity rises.
 GET /api/reports?circle_id=circle_nani → CallReport[] newest first: every stored call_report, plus entries built live from call_analysis / message_check events that have no call_report yet (status "in_progress" while chunks keep arriving).
 GET /api/circle/{id}/health-weeks → [{"week_label":"W1","calls":1}, ...8 weeks]
 GET /api/community/scam-types → [{"type":"Bank impersonation","reports":18}] sorted by reports.
 GET /api/community/campaigns/{id}/network → {"campaign_id","insight","nodes":[{"id","ring":0|1|2,"status":"first|warned|before|after|outside","label"}],"edges":[{"from","to"}]}
-Community figures = demo baseline (web/lib/mock/community.ts, labelled "Demo data") + live desktop reports added on top (summary, campaign reports_24h, map ZIP of the circle, scam types).
+Community figures = demo baseline seeded into MongoDB (community_zips, campaigns, and community_networks with source scamshield_atlanta_demo, labelled "Demo data") + live desktop reports added on top (summary, campaign reports_24h, map ZIP of the circle, scam types).

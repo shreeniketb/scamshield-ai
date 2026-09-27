@@ -18,6 +18,7 @@ namespace ScamDetector
         private static bool _verifyTold;
         private static bool _safeWordTold;
         private static double? _voiceScore;
+        private static bool _knownCaller;
 
         public static void Attach()
         {
@@ -29,6 +30,9 @@ namespace ScamDetector
 
         public static void ReloadSettings() => _settings = DashboardSettings.Load();
 
+        // Stop Recording means Nani recognized the caller. Do not treat it as a scam.
+        public static void MarkKnownCaller() => _knownCaller = true;
+
         private static void OnRecordingStarted()
         {
             _settings   = DashboardSettings.Load();
@@ -36,6 +40,7 @@ namespace ScamDetector
             _verifyTold   = false;
             _safeWordTold = false;
             _voiceScore   = null;
+            _knownCaller  = false;
             _verifyPollCts?.Cancel();
             Api.BeginCall();
             if (_settings.Enabled)
@@ -69,7 +74,12 @@ namespace ScamDetector
                 }));
         }
 
-        private static void OnRecordingStopped() => _verifyPollCts?.Cancel();
+        private static void OnRecordingStopped()
+        {
+            _verifyPollCts?.Cancel();
+            if (_knownCaller && _settings.Enabled)
+                _ = NotifyManualStopAsync();
+        }
 
         private static void OnAiVoice(AiVoiceDetector.DetectorResult result)
         {
@@ -88,7 +98,8 @@ namespace ScamDetector
                 _voiceScore,
                 MainLogic.FullTranscript(),
                 MainLogic.DurationSeconds,
-                MainLogic.SessionStartedUtc);
+                MainLogic.SessionStartedUtc,
+                _knownCaller);
 
             await MaybeReportSafeWordAsync();
             if (error != null)
@@ -101,6 +112,18 @@ namespace ScamDetector
             FamilyMessage?.Invoke(ScamShieldApi.DescribeActions(result));
             if (!_verifyTold && !string.IsNullOrEmpty(Api.VerifyId))
                 _ = PollVerifyAsync(Api.VerifyId);
+        }
+
+        private static async Task NotifyManualStopAsync()
+        {
+            var (result, error) = await Api.SendManualStopAsync(
+                _settings,
+                Interlocked.Increment(ref _chunk),
+                MainLogic.FullTranscript(),
+                MainLogic.DurationSeconds,
+                MainLogic.SessionStartedUtc);
+            if (error != null) FamilyMessage?.Invoke($"Dashboard: {error}");
+            else if (result != null) FamilyMessage?.Invoke("Dashboard: recording stopped — caller recognized, not a scam.");
         }
 
         private static async Task PollVerifyAsync(string verifyId)

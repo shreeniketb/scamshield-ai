@@ -22,10 +22,12 @@ async function computeHealth(db: Db, circle: CircleDoc): Promise<CircleHealth> {
   const threats = reports.filter(
     (report) => report.started_at >= since && report.overall.risk_score >= 0.6,
   ).length;
-  const held = payments.filter((payment) => !("seeded" in payment && payment.seeded) && payment.status !== "auto_ok").length;
-  const protectedDollars = reports
-    .filter((report) => report.started_at >= since && (report.entities.requested_amount ?? 0) > 0)
-    .reduce((sum, report) => sum + (report.entities.requested_amount ?? 0), 0);
+  const livePayments = payments.filter((payment) => !("seeded" in payment && payment.seeded));
+  const held = livePayments.filter((payment) => payment.status !== "auto_ok").length;
+  // Only money that family actually declined. Safe / low-risk calls never add dollars.
+  const protectedDollars = livePayments
+    .filter((payment) => payment.status === "declined")
+    .reduce((sum, payment) => sum + payment.amount, 0);
   const lastWeek = circle.health_weeks[circle.health_weeks.length - 1];
 
   return {

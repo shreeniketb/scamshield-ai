@@ -1,3 +1,4 @@
+import { ic3ElderFraud2025 } from "../data/ic3ElderFraud2025";
 import type {
   Campaign,
   CircleHealthWeek,
@@ -209,17 +210,10 @@ export function warningNetworkFor(campaign: Campaign): WarningNetwork {
   };
 }
 
-const STATE_CODES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
-  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
-  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
-];
-
-export const stateStats: StateStat[] = STATE_CODES.map((state, i) => ({
+export const stateStats: StateStat[] = ic3ElderFraud2025.map(({ state, losses_usd, complaints }) => ({
   state,
-  losses_usd: 20_000_000 + i * 3_400_000,
-  complaints: 800 + i * 90,
-  placeholder: true as const,
+  losses_usd,
+  complaints,
 }));
 
 export const communitySummary: CommunitySummary = {

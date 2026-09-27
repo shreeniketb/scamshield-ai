@@ -29,6 +29,7 @@ export async function POST(request: Request) {
     payment_method: blankToUndefined(body.payment_method) ?? null,
     created_at: body.created_at ?? nowIso(),
     received_at: nowIso(),
+    manual_stop: Boolean(body.manual_stop),
   };
   const actions = await processEvent(db, circle, event);
   return json({ ok: true, risk: event.risk, actions });

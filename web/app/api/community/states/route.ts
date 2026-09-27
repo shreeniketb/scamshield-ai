@@ -1,7 +1,9 @@
-import { stateStats } from "@/lib/mock/community";
+import { getStates } from "@/lib/server/community";
 import { json } from "@/lib/server/http";
+import { getSeededDb } from "@/lib/server/seed";
 
-// Placeholder IC3 figures until Raj provides the real 2025 numbers.
+// FBI IC3 2025 elder fraud (age 60+), stored in MongoDB community_states.
 export async function GET() {
-  return json(stateStats);
+  const db = await getSeededDb();
+  return json(await getStates(db));
 }

@@ -93,7 +93,10 @@ namespace ScamDetector
         private async void BtnAction_Click(object sender, RoutedEventArgs e)
         {
             if (_isRecording)
+            {
+                DashboardBridge.MarkKnownCaller();
                 await MainLogic.StopAsync(discard: false);
+            }
             else
                 MainLogic.StartRecording();
         }

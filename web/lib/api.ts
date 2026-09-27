@@ -186,7 +186,7 @@ export async function getScamTypes(): Promise<ScamTypeTotal[]> {
   return realGet<ScamTypeTotal[]>("/api/community/scam-types");
 }
 
-// ── Verification ("Is this you?") ─────────────────────────────────────────
+// ── Verification ("Is this {name}?") ──────────────────────────────────────
 
 export async function getPendingVerify(memberId: string): Promise<VerifyRequest | null> {
   if (!useMocks) {
@@ -223,7 +223,7 @@ export async function respondVerify(id: string, response: "me" | "not_me") {
 // ── Demo ──────────────────────────────────────────────────────────────────
 
 // Real mode posts the contract's example call_analysis event, exactly as
-// Kale's desktop app would; the server then asks Aarav "Is this you?".
+// Kale's desktop app would; the server then asks Kale "Is this Kale?".
 export async function triggerVoiceCloneVerify(): Promise<{ id: string }> {
   const now = Date.now();
   if (!useMocks) {
@@ -258,7 +258,7 @@ export async function triggerVoiceCloneVerify(): Promise<{ id: string }> {
     senior_id: "u_nani",
     claimed_member_id: "u_aarav",
     claimed_member_name: "Kale",
-    reason: "Someone claiming to be you is on a WhatsApp call with Nani right now.",
+    reason: "Someone claiming to be Kale is on a WhatsApp call with Nani right now.",
     source_event_id: "call_20260925_001",
     status: "pending",
     created_at: new Date(now).toISOString(),

@@ -1,5 +1,6 @@
 import type { Db } from "mongodb";
 import type { CircleMember, VerifyRequest } from "../types";
+import { holdForVerify, isThisName, verifyReason } from "../verifyCopy";
 import { createAlert, severityForRisk, upsertEventAlert } from "./alerts";
 import {
   collections,
@@ -7,11 +8,11 @@ import {
   type CircleDoc,
   type MessageCheckEvent,
 } from "./collections";
-import { newId, nowIso, phoneKey } from "./http";
+import { newId, nowIso } from "./http";
 
 export type Action =
   | { type: "prompt_safe_word"; message: string }
-  | { type: "verify_member"; member_id: string; verify_id: string }
+  | { type: "verify_member"; member_id: string; verify_id: string; message?: string }
   | { type: "show_warning"; severity: "critical"; message: string };
 
 const MONEY_CUES = ["bail", "money", "gift_cards", "wire", "crypto", "payment"];
@@ -30,16 +31,12 @@ export function riskOf(body: { risk?: unknown; scam_probability?: unknown }) {
   return clampRisk(body.risk ?? body.scam_probability);
 }
 
-function memberByRelation(circle: CircleDoc, claimed: string | null | undefined) {
+function memberByClaimed(circle: CircleDoc, claimed: string | null | undefined) {
   if (!claimed) return undefined;
   const wanted = claimed.trim().toLowerCase();
-  return circle.members.find((member) => member.relation.toLowerCase() === wanted);
-}
-
-function memberByPhone(circle: CircleDoc, phone: string) {
-  const key = phoneKey(phone);
-  if (!key) return undefined;
-  return circle.members.find((member) => phoneKey(member.phone) === key);
+  return circle.members.find(
+    (member) => member.relation.toLowerCase() === wanted || member.name.toLowerCase() === wanted,
+  );
 }
 
 function alertCopy(
@@ -88,10 +85,7 @@ async function ensureVerify(
     senior_id: circle.senior.id,
     claimed_member_id: member.id,
     claimed_member_name: member.name,
-    reason:
-      event.type === "call_analysis"
-        ? `Someone claiming to be you is on a WhatsApp call with ${circle.senior.name} right now.`
-        : `Someone claiming to be you just messaged ${circle.senior.name} asking for help.`,
+    reason: verifyReason(member.name, circle.senior.name, event.type === "call_analysis"),
     source_event_id: event.id,
     status: "pending",
     created_at: new Date(now).toISOString(),
@@ -103,7 +97,7 @@ async function ensureVerify(
     circle_id: circle.id,
     kind: "verify",
     severity: "warning",
-    title: `Asked ${member.name}: is this you?`,
+    title: `Asked ${member.name}: ${isThisName(member.name)}`,
     body: verify.reason,
     ref_id: verify.id,
   });
@@ -119,14 +113,44 @@ export async function processEvent(
   await collections(db).events.insertOne({ ...event });
 
   const isCall = event.type === "call_analysis";
+  if (isCall && event.manual_stop) {
+    const { verifies, alerts } = collections(db);
+    await verifies.updateMany(
+      { source_event_id: event.id, status: "pending" },
+      { $set: { status: "confirmed", responded_at: nowIso() } },
+    );
+    const existing = await alerts.findOne({ ref_id: event.id, kind: "call" });
+    if (existing) {
+      await alerts.updateOne(
+        { id: existing.id },
+        {
+          $set: {
+            severity: "info",
+            title: "Call stopped — caller recognized",
+            body: "Recording was stopped manually — the listener recognized the caller. This was not counted as a scam.",
+            seen: true,
+          },
+        },
+      );
+    } else {
+      await upsertEventAlert(db, {
+        circle_id: circle.id,
+        kind: "call",
+        severity: "info",
+        title: "Call stopped — caller recognized",
+        body: "Recording was stopped manually — the listener recognized the caller. This was not counted as a scam.",
+        ref_id: event.id,
+      });
+    }
+    return [];
+  }
+
   const cues = isCall ? event.script_cues ?? [] : event.red_flags ?? [];
   const text = isCall ? event.transcript_snippet ?? "" : event.text ?? "";
-  const from = isCall ? event.caller : event.sender;
   const voice = isCall ? event.voice_synthetic_score ?? 0 : 0;
   const moneyAsked = asksForMoney(cues, text);
 
-  const claimed = memberByRelation(circle, event.claimed_identity);
-  const callerIsMember = memberByPhone(circle, from);
+  const claimed = memberByClaimed(circle, event.claimed_identity);
 
   await upsertEventAlert(db, {
     circle_id: circle.id,
@@ -137,31 +161,23 @@ export async function processEvent(
   });
 
   const actions: Action[] = [];
-  const method = circle.rules.protection_method ?? "verify_member";
+  const impersonatingCircle = Boolean(claimed) && event.risk >= 0.4;
 
-  if (method === "safe_word" && circle.safe_word) {
-    const rules = circle.rules.prompt_safe_word_when;
-    const matches =
-      (rules.includes("unknown_caller_asks_money") && !callerIsMember && moneyAsked) ||
-      (rules.includes("voice_clone_score_above_0.7") && voice > 0.7) ||
-      (rules.includes("claims_family") && Boolean(event.claimed_identity)) ||
-      rules.length === 0;
-    if (matches) {
-      actions.push({
-        type: "prompt_safe_word",
-        message: "Ask the caller for your family safe word. If they cannot say it, hang up immediately.",
-      });
-    }
+  if (impersonatingCircle && circle.safe_word) {
+    actions.push({
+      type: "prompt_safe_word",
+      message: "Ask the caller for your family safe word. If they cannot say it, hang up immediately.",
+    });
   }
 
-  if (method === "verify_member") {
-    let verifyTarget: CircleMember | undefined;
-    if (claimed?.can_verify && event.risk >= 0.6) verifyTarget = claimed;
-    else if (callerIsMember?.can_verify && moneyAsked) verifyTarget = callerIsMember;
-    if (verifyTarget) {
-      const verify = await ensureVerify(db, circle, verifyTarget, event);
-      actions.push({ type: "verify_member", member_id: verifyTarget.id, verify_id: verify.id });
-    }
+  if (impersonatingCircle && claimed?.can_verify) {
+    const verify = await ensureVerify(db, circle, claimed, event);
+    actions.push({
+      type: "verify_member",
+      member_id: claimed.id,
+      verify_id: verify.id,
+      message: holdForVerify(claimed.name, claimed.phone),
+    });
   }
 
   if (event.risk >= 0.7) {

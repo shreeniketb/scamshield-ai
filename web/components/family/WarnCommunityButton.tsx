@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { warnCommunity } from "@/lib/api";
 
+const actionClass =
+  "inline-flex h-full min-h-12 w-full items-center justify-center rounded-card bg-brand-soft text-brand";
+
 export function WarnCommunityButton({ callId }: { callId: string | null }) {
   const [status, setStatus] = useState<string | null>(null);
 
@@ -21,17 +24,15 @@ export function WarnCommunityButton({ callId }: { callId: string | null }) {
   }
 
   return (
-    <div>
-      <button
-        type="button"
-        onClick={() => void warn()}
-        className="inline-flex min-h-12 w-full items-center justify-center rounded-card bg-brand-soft text-brand"
-      >
+    <>
+      <button type="button" onClick={() => void warn()} className={actionClass}>
         Warn Community
       </button>
-      <p aria-live="polite" className="mt-2 text-sm text-muted">
-        {status}
-      </p>
-    </div>
+      {status ? (
+        <p className="col-span-2 text-sm text-muted" aria-live="polite">
+          {status}
+        </p>
+      ) : null}
+    </>
   );
 }

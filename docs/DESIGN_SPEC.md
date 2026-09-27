@@ -4,7 +4,7 @@
 ScamShield protects older adults from scams by bringing their family into the moment of decision.
 - Nani's laptop runs the ScamShield desktop app (built by Kale). It listens to WhatsApp calls and messages.
 - When a scam is suspected — including AI voice clones pretending to be family — ScamShield:
-  - asks the real family member "Is this you?",
+  - asks the real family member "Is this {their name}?",
   - prompts Nani for the family safe word,
   - holds risky payments until family co-signs.
 - Reports from every family feed Community Watch, which warns other families before the same scam reaches them.
@@ -30,12 +30,12 @@ ScamShield protects older adults from scams by bringing their family into the mo
 /community/campaign/[id]            Campaign detail + Mutation Map
 /demo                               Demo control room
 /styleguide                         Component gallery (hidden)
-GLOBAL (inside /family): the "Is this you?" takeover can appear on any tab.
+GLOBAL (inside /family): the "Is this {name}?" takeover can appear on any tab.
 
 ## 4. Key user flows (must work end-to-end)
 F1. VOICE-CLONE CALL (the climax)
   1. Event arrives.
-  2. Aarav's phone shows the full-screen "Is this you?" takeover, with haptic + 30 s countdown.
+  2. Aarav's phone shows the full-screen "Is this Kale?" takeover, with haptic + 30 s countdown.
   3. He taps NOT me.
   4. Confirmation: "Nani has been told to hang up" + Call Nani button.
   5. Home shows a critical incident card.
@@ -107,9 +107,9 @@ Top to bottom:
 - "Your circle's network" mini visual: "Your circle is connected to 42 families in Atlanta · 3 warnings reached you before the scam did".
 - Link to full Community Watch.
 
-### 5.6 Global: "Is this you?" takeover
+### 5.6 Global: "Is this {name}?" takeover
 - Full-screen sheet over everything.
-- ScamShield logo, "Is this you?" (Fraunces 32), reason (20 px), 30 s countdown ring.
+- ScamShield logo, "Is this Vanessa?" using the impersonated member's name (Fraunces 32), reason naming that person (20 px), 30 s countdown ring.
 - Two buttons in the thumb zone: "NOT me — protect Nani" (critical, 64 px) and "Yes, it's me" (secondary, 56 px).
 - Haptic buzz on appear.
 - Confirmation states: NOT me / confirmed / expired.
