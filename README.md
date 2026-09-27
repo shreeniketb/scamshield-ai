@@ -1,2 +1,2 @@
 # scamshield-ai
-Shreeniket Shubh Raj Kale
+Kale Maxwell, Shreeniket Bhat, Shubhajit Bag, Raj Kumar Parihar
