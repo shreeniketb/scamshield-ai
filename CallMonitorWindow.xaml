@@ -61,6 +61,24 @@
             </StackPanel>
         </Border>
 
+        <!-- AI Voice Detection -->
+        <Border x:Name="AiVoiceBorder"
+                Background="#252526" BorderBrush="#555555" BorderThickness="2"
+                CornerRadius="6" Padding="12,10" Margin="0,10,0,0"
+                Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock x:Name="TxtAiVoiceLabel"
+                           Text="AI voice probability:"
+                           Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,4"/>
+                <TextBlock x:Name="TxtAiVoiceResult"
+                           Foreground="#DCDCDC" FontSize="15" FontWeight="Bold"
+                           TextWrapping="Wrap"/>
+                <TextBlock x:Name="TxtAiVoiceDetail"
+                           Foreground="#AAAAAA" FontSize="11" Margin="0,4,0,0"
+                           TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
         <!-- Recognize button -->
         <Button x:Name="BtnRecognize"
                 Content="I recognize this number"

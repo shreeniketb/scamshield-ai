@@ -246,11 +246,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\kales\\VSCode Projects\\scamshield-ai\\ScamDetector.csproj",
+      "projectUniqueName": "C:\\Users\\kales\\OneDrive\\Desktop\\scamshield-ai\\ScamDetector.csproj",
       "projectName": "ScamDetector",
-      "projectPath": "C:\\Users\\kales\\VSCode Projects\\scamshield-ai\\ScamDetector.csproj",
+      "projectPath": "C:\\Users\\kales\\OneDrive\\Desktop\\scamshield-ai\\ScamDetector.csproj",
       "packagesPath": "C:\\Users\\kales\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\kales\\VSCode Projects\\scamshield-ai\\obj\\",
+      "outputPath": "C:\\Users\\kales\\OneDrive\\Desktop\\scamshield-ai\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\kales\\AppData\\Roaming\\NuGet\\NuGet.Config"

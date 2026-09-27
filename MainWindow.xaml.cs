@@ -66,10 +66,6 @@ namespace ScamDetector
         // ── Call watcher ──────────────────────────────────────────────────────
         private CallWatcher? _callWatcher;
 
-        // ── SMS alerts ───────────────────────────────────────────────────
-        private AlertSettings _alertSettings = new();
-        private bool          _alertSent;       // one alert per call
-        private string?       _callerDisplay;   // unknown caller's number, for the alert
 
         // ── Paths ─────────────────────────────────────────────────────────────
         private static readonly string _baseDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -86,9 +82,14 @@ namespace ScamDetector
         private bool _loadingKeys;
 
         // ── Session data ──────────────────────────────────────────────────────
-        private readonly List<object>          _sessionChunks     = new();
+        private readonly List<object>           _sessionChunks     = new();
         private readonly List<ConversationLine> _conversation      = new();
         private readonly List<string>           _transcriptionGaps = new();
+
+        // AI voice: keep a running average across chunks so the result stabilises over time
+        private double _aiProbSum;
+        private int    _aiProbCount;
+        private readonly List<object> _aiChunkResults = new();
 
         private static readonly JsonSerializerOptions _jsonOptions = new()
         {
@@ -101,7 +102,6 @@ namespace ScamDetector
         {
             InitializeComponent();
             LoadSavedKeys();
-            LoadAlertSettings();
             StartCallWatcher();
         }
 
@@ -192,15 +192,15 @@ namespace ScamDetector
             try
             {
                 SaveAllKeys();
-                SaveAlertSettingsFromUi(showStatus: false);   // pick up any unsaved typing
                 _assemblyKey = TxtAssemblyKey.Password.Trim();
                 _grokKey     = TxtGrokKey.Password.Trim();
                 Directory.CreateDirectory(_workDir);
 
                 _chunkNumber    = 0;
                 _highAlertShown = false;
-                _alertSent      = false;
-                _callerDisplay  = null;
+                _aiProbSum      = 0;
+                _aiProbCount    = 0;
+                lock (_aiChunkResults) _aiChunkResults.Clear();
                 _autoStarted    = false;
                 _discardSession = false;
                 _callInfo       = null;
@@ -403,6 +403,10 @@ namespace ScamDetector
 
                 SnapshotAndRestartWriters(micSnap, loopSnap);
 
+                // Save a copy of the loopback (caller-only audio) for AI voice analysis
+                string aiSnap = Path.Combine(_workDir, $"chunk{thisChunk}_ai.wav");
+                if (File.Exists(loopSnap)) File.Copy(loopSnap, aiSnap, true);
+
                 TimeSpan duration = BuildStereoChunk(micSnap, loopSnap, stereoSnap);
                 if (duration < TimeSpan.FromSeconds(1))
                 {
@@ -412,8 +416,47 @@ namespace ScamDetector
                 }
 
                 TimeSpan callOffset = start - _sessionStart;
-                var result = await TranscribeWithAssemblyAI(stereoSnap, callOffset);
+
+                // Run transcription and AI voice detection in parallel
+                var transcribeTask = TranscribeWithAssemblyAI(stereoSnap, callOffset);
+                // deleteAfter: false temporarily so you can inspect the WAV
+                var aiVoiceTask    = File.Exists(aiSnap)
+                    ? AiVoiceDetector.AnalyzeAsync(aiSnap, deleteAfter: false)
+                    : Task.FromResult(new AiVoiceDetector.DetectorResult(0, 0, "UNKNOWN", "Unknown", "No caller audio captured."));
+
+                await Task.WhenAll(transcribeTask, aiVoiceTask);
+
+                var result        = transcribeTask.Result;
+                var aiVoiceResult = aiVoiceTask.Result;
+
                 if (_discardSession) return;
+
+                // Update the rolling average and show it in the popup
+                if (aiVoiceResult.Error == null)
+                {
+                    _aiProbSum   += aiVoiceResult.AiProbability;
+                    _aiProbCount++;
+                    double avgProb  = _aiProbSum / _aiProbCount;
+                    string avgLabel = avgProb >= 0.7 ? "High" : avgProb >= 0.4 ? "Medium" : "Low";
+                    var avgResult   = aiVoiceResult with { AiProbability = Math.Round(avgProb, 4), RiskLabel = avgLabel };
+                    string aiJson = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        prediction       = aiVoiceResult.Prediction,
+                        ai_probability   = aiVoiceResult.AiProbability,
+                        real_probability = aiVoiceResult.RealProbability,
+                        threshold        = 0.5,
+                        model            = "AASIST"
+                    }, _jsonOptions);
+                    Log($"[AI voice] chunk {thisChunk} raw result:\n{aiJson}");
+                    Log($"[AI voice] running avg: AI={avgProb * 100:F1}% ({avgLabel})");
+                    _monitor?.Dispatcher.Invoke(() => _monitor?.ShowAiVoiceResult(avgResult));
+                    lock (_aiChunkResults) _aiChunkResults.Add(new { chunk = thisChunk, ai_probability = aiVoiceResult.AiProbability, risk_label = aiVoiceResult.RiskLabel, running_avg = Math.Round(avgProb, 4) });
+                }
+                else
+                {
+                    Log($"[AI voice] chunk {thisChunk} error: {aiVoiceResult.Error}");
+                    _monitor?.Dispatcher.Invoke(() => _monitor?.ShowAiVoiceError(aiVoiceResult.Error!));
+                }
 
                 var chunk = new
                 {
@@ -666,6 +709,7 @@ namespace ScamDetector
                     speakers = new { user = "Person using the app", caller = "Person on the other end of the call" },
                     transcription_gaps = _transcriptionGaps.Count > 0 ? new List<string>(_transcriptionGaps) : null,
                     call_info          = _callInfo,
+                    ai_voice           = _aiProbCount > 0 ? new { running_avg_ai_probability = Math.Round(_aiProbSum / _aiProbCount, 4), chunks_analyzed = _aiProbCount, note = "AASIST model; treat as supporting signal only — not definitive proof of AI voice" } : null,
                     conversation       = new List<ConversationLine>(_conversation)
                 };
             }
@@ -705,6 +749,8 @@ namespace ScamDetector
 
                 ShowVerdict(verdict, callTime);
 
+                Log($"[Grok result] risk_level={verdict.RiskLevel} scam_likelihood={verdict.ScamLikelihood} enough_info={verdict.EnoughInformation}");
+
                 // No extra window: the monitor pop-up already shows the verdict.
                 // Just play a sound the first time the call turns high-risk.
                 if (verdict.RiskLevel == "high" && !_highAlertShown)
@@ -713,8 +759,7 @@ namespace ScamDetector
                     Dispatcher.Invoke(() => System.Media.SystemSounds.Exclamation.Play());
                 }
 
-                // SMS alert: once per call, as soon as the risk crosses your threshold
-                MaybeSendSmsAlert(verdict);
+
 
                 if (_isRecording) SetChunkStatus($"Grok checked 0:00 - {callTime}. Listening...");
             }
@@ -848,141 +893,6 @@ namespace ScamDetector
             return s.Length > 0 ? char.ToUpper(s[0]) + s[1..] : s;
         }
 
-        // ── SMS ALERTS ───────────────────────────────────────────────────
-        private void LoadAlertSettings()
-        {
-            _alertSettings = AlertSettings.Load();
-
-            ChkSmsAlerts.IsChecked = _alertSettings.Enabled;
-            ChkAlertMedium.IsChecked    = _alertSettings.AlertOnMedium;
-            TxtAlertName.Text           = _alertSettings.YourName;
-            TxtAlertTo.Text             = _alertSettings.MyNumber;
-            TxtTwilioSid.Text           = _alertSettings.AccountSid;
-            TxtTwilioToken.Password     = _alertSettings.AuthToken;
-            TxtTwilioFrom.Text          = _alertSettings.FromNumber;
-
-            // Hooked up after loading, so filling in the checkbox above doesn't trigger a save
-            ChkSmsAlerts.Checked   += (_, _) => ToggleAlerts(true);
-            ChkSmsAlerts.Unchecked += (_, _) => ToggleAlerts(false);
-            ChkAlertMedium.Checked      += (_, _) => SaveAlertSettingsFromUi(showStatus: false);
-            ChkAlertMedium.Unchecked    += (_, _) => SaveAlertSettingsFromUi(showStatus: false);
-        }
-
-        private void ToggleAlerts(bool on)
-        {
-            SaveAlertSettingsFromUi(showStatus: false);
-            SetAlertStatus(on ? "SMS alerts on" : "SMS alerts off");
-        }
-
-        private void BtnSaveAlerts_Click(object sender, RoutedEventArgs e) => SaveAlertSettingsFromUi();
-
-        private bool SaveAlertSettingsFromUi(bool showStatus = true)
-        {
-            if (ChkSmsAlerts == null) return false;   // window still loading
-
-            var s = new AlertSettings
-            {
-                Enabled       = ChkSmsAlerts.IsChecked == true,
-                AlertOnMedium = ChkAlertMedium.IsChecked == true,
-                YourName      = TxtAlertName.Text.Trim(),
-                AccountSid    = TxtTwilioSid.Text.Trim(),
-                AuthToken     = TxtTwilioToken.Password.Trim()
-            };
-
-            // Numbers are cleaned up into the +14045551234 format Twilio needs
-            if (TxtAlertTo.Text.Trim().Length > 0)
-            {
-                string? n = SmsAlerter.NormalizeNumber(TxtAlertTo.Text);
-                if (n == null) { if (showStatus) SetAlertStatus("That number doesn't look valid. Try +14045551234."); return false; }
-                s.MyNumber = n;
-                TxtAlertTo.Text = n;
-            }
-            if (TxtTwilioFrom.Text.Trim().Length > 0)
-            {
-                string? n = SmsAlerter.NormalizeNumber(TxtTwilioFrom.Text);
-                if (n == null) { if (showStatus) SetAlertStatus("The sandbox number doesn't look valid. It should be +14155238886."); return false; }
-                s.FromNumber = n;
-                TxtTwilioFrom.Text = n;
-            }
-
-            try { s.Save(); }
-            catch (Exception ex) { SetAlertStatus($"Couldn't save: {ex.Message}"); return false; }
-
-            _alertSettings = s;
-            if (showStatus) SetAlertStatus("Saved ✓");
-            return true;
-        }
-
-        private async void BtnTestAlert_Click(object sender, RoutedEventArgs e)
-        {
-            if (!SaveAlertSettingsFromUi()) return;
-
-            var s = _alertSettings;
-            string? missing = s.MissingSetup();
-            if (missing != null) { SetAlertStatus(missing); return; }
-
-            BtnTestAlert.IsEnabled = false;
-            SetAlertStatus("Sending...");
-
-            string? error = null;
-            foreach (string to in s.Recipients())
-            {
-                error = await SmsAlerter.SendAsync(s, to,
-                    "🛡️ ScamShield test: SMS alerts are working. You'll get a message like this if a call looks like a scam.");
-                if (error != null) break;
-            }
-
-            BtnTestAlert.IsEnabled = true;
-            SetAlertStatus(error ?? "Test message sent ✓");
-        }
-
-        // Decides whether this verdict should trigger an alert, and says why not if it doesn't.
-        private void MaybeSendSmsAlert(ScamVerdict verdict)
-        {
-            if (_alertSent) return;   // already alerted on this call
-
-            bool qualifies = verdict.RiskLevel == "high" ||
-                             (_alertSettings.AlertOnMedium && verdict.RiskLevel == "medium");
-            if (!qualifies) return;
-
-            if (!_alertSettings.Enabled)
-            {
-                Log("[SMS alert] Risk crossed the threshold, but SMS alerts are turned off.");
-                return;
-            }
-
-            string? missing = _alertSettings.MissingSetup();
-            if (missing != null)
-            {
-                Log($"[SMS alert] Risk crossed the threshold, but setup is incomplete: {missing}");
-                return;
-            }
-
-            _alertSent = true;
-            Log($"[SMS alert] {verdict.RiskLevel.ToUpperInvariant()} risk detected — sending SMS alert now...");
-            _ = SendSmsAlertsAsync(verdict);
-        }
-
-        private async Task SendSmsAlertsAsync(ScamVerdict verdict)
-        {
-            var s = _alertSettings;
-            if (_discardSession) return;
-
-            string body = SmsAlerter.BuildScamAlert(s, verdict, _callerDisplay);
-            foreach (string to in s.Recipients())
-            {
-                string? error = await SmsAlerter.SendAsync(s, to, body);
-                Log(error == null
-                    ? $"[SMS alert] Sent to number ending {LastFour(to)}."
-                    : $"[SMS alert] Failed for number ending {LastFour(to)}: {error}");
-            }
-        }
-
-        private static string LastFour(string number) => number.Length >= 4 ? number[^4..] : number;
-
-        private void SetAlertStatus(string message) =>
-            Dispatcher.Invoke(() => TxtAlertStatus.Text = message);
-
         // ── CALL MONITOR POPUP ────────────────────────────────────────────────
         private void OpenCallMonitor(string listeningMessage)
         {
@@ -1001,18 +911,18 @@ namespace ScamDetector
             await StopRecordingAsync(discard: true);
         }
 
-        // ── CALL DETECTION ───────────────────────────────────────────
+        // ── WHATSAPP CALL DETECTION ───────────────────────────────────────────
         private void StartCallWatcher()
         {
             _callWatcher = new CallWatcher();
             _callWatcher.StatusMessage += msg => Log($"[Call watcher] {msg}");
-            _callWatcher.CallStarted   += OnCallStarted;
-            _callWatcher.CallEnded     += OnCallEnded;
+            _callWatcher.CallStarted   += OnWhatsAppCallStarted;
+            _callWatcher.CallEnded     += OnWhatsAppCallEnded;
             try { _callWatcher.Start(); }
             catch (Exception ex) { Log($"[Call watcher] Could not start: {ex.Message}"); }
         }
 
-        private void OnCallStarted(CallerInfo info)
+        private void OnWhatsAppCallStarted(CallerInfo info)
         {
             Dispatcher.Invoke(() =>
             {
@@ -1033,12 +943,11 @@ namespace ScamDetector
                 _autoStarted = true;
                 _callInfo = new { caller_display = info.Display, in_contacts = false, recording_started = "automatically (caller not in contacts)" };
                 _monitor?.SetCaller($"Unknown number: {info.Display}");
-                _callerDisplay = info.Display;
                 Log($"[Call watcher] Unknown caller ({info.Display}). Recording started automatically.");
             });
         }
 
-        private void OnCallEnded()
+        private void OnWhatsAppCallEnded()
         {
             Dispatcher.Invoke(() =>
             {
@@ -1065,11 +974,13 @@ namespace ScamDetector
                 recorded_at  = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
                 total_chunks = chunks.Count,
                 speakers     = new { user = "Person using the app (microphone)", caller = "Person on the other end of the call (system audio)" },
-                pipeline     = new { transcription = "AssemblyAI (multichannel)", scam_analysis = $"xAI {GrokPrompt.Model}" },
+                pipeline     = new { transcription = "AssemblyAI (multichannel)", scam_analysis = $"xAI {GrokPrompt.Model}", voice_analysis = "AASIST (local)" },
                 call_info      = _callInfo,
                 final_verdict  = finalVerdict,
-                verdict_history = verdicts,
-                grok_payload   = BuildGrokPayload(callLength, chunks.Count),
+                verdict_history  = verdicts,
+                ai_voice_summary = _aiProbCount > 0 ? new { running_avg_ai_probability = Math.Round(_aiProbSum / _aiProbCount, 4), chunks_analyzed = _aiProbCount } : null,
+                ai_voice_chunks  = new List<object>(_aiChunkResults),
+                grok_payload     = BuildGrokPayload(callLength, chunks.Count),
                 chunks
             };
 

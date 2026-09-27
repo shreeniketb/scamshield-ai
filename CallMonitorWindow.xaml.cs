@@ -79,6 +79,40 @@ namespace ScamDetector
         }
 
         // Call ended normally: keep the window open so the final verdict can be read
+        // ── AI voice result ───────────────────────────────────────────────────
+        public void ShowAiVoiceResult(AiVoiceDetector.DetectorResult r)
+        {
+            string label = r.RiskLabel switch
+            {
+                "High"   => "HIGH — likely AI-generated",
+                "Medium" => "MEDIUM — uncertain",
+                "Low"    => "LOW — likely human",
+                _        => "Unknown"
+            };
+
+            var color = r.RiskLabel switch
+            {
+                "High"   => Color.FromRgb(220, 53, 69),
+                "Medium" => Color.FromRgb(255, 193, 7),
+                "Low"    => Color.FromRgb(40, 167, 69),
+                _        => Color.FromRgb(120, 120, 120)
+            };
+
+            TxtAiVoiceResult.Text       = label;
+            TxtAiVoiceResult.Foreground = new SolidColorBrush(color);
+            TxtAiVoiceDetail.Text       = $"AI: {r.AiProbability * 100:F1}%  |  Human: {r.RealProbability * 100:F1}%";
+            AiVoiceBorder.BorderBrush   = new SolidColorBrush(color);
+            AiVoiceBorder.Visibility    = Visibility.Visible;
+        }
+
+        public void ShowAiVoiceError(string error)
+        {
+            TxtAiVoiceResult.Text       = "Could not analyze voice";
+            TxtAiVoiceResult.Foreground = new SolidColorBrush(Color.FromRgb(170, 170, 170));
+            TxtAiVoiceDetail.Text       = error;
+            AiVoiceBorder.Visibility    = Visibility.Visible;
+        }
+
         public void MarkRecordingStopped(string message)
         {
             _clock.Stop();
