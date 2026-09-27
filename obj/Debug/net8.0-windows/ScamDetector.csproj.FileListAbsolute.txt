@@ -51,9 +51,7 @@ C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\NAudio.Wi
 C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\NAudio.WinMM.dll
 C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.csproj.AssemblyReference.cache
 C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\CallMonitorWindow.baml
-C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\MainWindow.baml
 C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\CallMonitorWindow.g.cs
-C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\MainWindow.g.cs
 C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\App.g.cs
 C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector_MarkupCompile.cache
 C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.g.resources
@@ -73,3 +71,6 @@ C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_
 C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\__pycache__\detector.cpython-314.pyc
 C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\__pycache__\__init__.cpython-314.pyc
 C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\__pycache__\detect_ai_voice.cpython-314.pyc
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\KeySetupWindow.baml
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\App.baml
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\KeySetupWindow.g.cs

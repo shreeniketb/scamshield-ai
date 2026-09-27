@@ -5,13 +5,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="NAudio" Version="2.*" />
   </ItemGroup>
 
-  <!-- Copy the ai_voice_detector folder next to the .exe so the script can be found at runtime -->
   <ItemGroup>
     <None Update="ai_voice_detector\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
