@@ -1,0 +1,8 @@
+{
+  "scam_likelihood": 10,
+  "risk_level": "low",
+  "enough_information": false,
+  "summary": "Call consists of repeated poetic phrases and mirroring with no clear topic or request.",
+  "reasons": [],
+  "recommended_action": "Ask the caller to identify themselves and state the purpose of the call."
+}

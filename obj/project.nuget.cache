@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "dgSpecHash": "au9GoJx5nm0=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\kales\\OneDrive\\Desktop\\scamshield-ai\\ScamDetector.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\kales\\.nuget\\packages\\naudio\\2.4.0\\naudio.2.4.0.nupkg.sha512",
+    "C:\\Users\\kales\\.nuget\\packages\\naudio.asio\\2.4.0\\naudio.asio.2.4.0.nupkg.sha512",
+    "C:\\Users\\kales\\.nuget\\packages\\naudio.core\\2.4.0\\naudio.core.2.4.0.nupkg.sha512",
+    "C:\\Users\\kales\\.nuget\\packages\\naudio.midi\\2.4.0\\naudio.midi.2.4.0.nupkg.sha512",
+    "C:\\Users\\kales\\.nuget\\packages\\naudio.wasapi\\2.4.0\\naudio.wasapi.2.4.0.nupkg.sha512",
+    "C:\\Users\\kales\\.nuget\\packages\\naudio.winforms\\2.4.0\\naudio.winforms.2.4.0.nupkg.sha512",
+    "C:\\Users\\kales\\.nuget\\packages\\naudio.winmm\\2.4.0\\naudio.winmm.2.4.0.nupkg.sha512",
+    "C:\\Users\\kales\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.31\\microsoft.netcore.app.ref.8.0.31.nupkg.sha512",
+    "C:\\Users\\kales\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.31\\microsoft.windowsdesktop.app.ref.8.0.31.nupkg.sha512",
+    "C:\\Users\\kales\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.31\\microsoft.aspnetcore.app.ref.8.0.31.nupkg.sha512",
+    "C:\\Users\\kales\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.31\\microsoft.netcore.app.host.win-x64.8.0.31.nupkg.sha512"
+  ],
+  "logs": []
+}

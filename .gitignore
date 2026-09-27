@@ -1,0 +1,4 @@
+# ScamShield: call data and secrets
+*.wav
+session_*.json
+key_*.txt

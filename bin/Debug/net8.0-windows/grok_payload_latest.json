@@ -1,0 +1,104 @@
+{
+  "call_time_so_far": "0:00 - 0:45",
+  "chunks_analyzed": 2,
+  "speakers": {
+    "user": "Person using the app",
+    "caller": "Person on the other end of the call"
+  },
+  "call_info": {
+    "caller_display": "+91 79807 42017",
+    "in_contacts": false,
+    "recording_started": "automatically (caller not in contacts)"
+  },
+  "ai_voice": {
+    "running_avg_ai_probability": 0.0001,
+    "chunks_analyzed": 2,
+    "note": "AASIST model; treat as supporting signal only — not definitive proof of AI voice"
+  },
+  "conversation": [
+    {
+      "time": "0:00",
+      "speaker": "user",
+      "text": "A",
+      "confidence": 0.942
+    },
+    {
+      "time": "0:06",
+      "speaker": "caller",
+      "text": "Gentle mist",
+      "confidence": 0.986
+    },
+    {
+      "time": "0:06",
+      "speaker": "user",
+      "text": "gentle mist",
+      "confidence": 0.981
+    },
+    {
+      "time": "0:07",
+      "speaker": "user",
+      "text": "is in the air, softening the edges of the landscape,",
+      "confidence": 0.934
+    },
+    {
+      "time": "0:07",
+      "speaker": "caller",
+      "text": "in the air,",
+      "confidence": 0.8
+    },
+    {
+      "time": "0:08",
+      "speaker": "caller",
+      "text": "softening the edges of the landscape, lending it a dreamlike quality.",
+      "confidence": 0.999
+    },
+    {
+      "time": "0:10",
+      "speaker": "user",
+      "text": "lending it dreamlike quality.",
+      "confidence": 0.974
+    },
+    {
+      "time": "0:17",
+      "speaker": "user",
+      "text": "Absolutely, absolutely. No doubt that it'll be a transformative experience for all involved.",
+      "confidence": 0.961
+    },
+    {
+      "time": "0:17",
+      "speaker": "caller",
+      "text": "Absolutely",
+      "confidence": 0.999
+    },
+    {
+      "time": "0:18",
+      "speaker": "caller",
+      "text": "no doubt that it'll be a transformative experience for all involved. So besides work, how have you been spending your free time lately?",
+      "confidence": 0.991
+    },
+    {
+      "time": "0:23",
+      "speaker": "user",
+      "text": "So besides work, how have you been spending your free time lately?",
+      "confidence": 0.994
+    },
+    {
+      "time": "0:30",
+      "speaker": "user",
+      "text": "Yes, yes, I've heard some things here and there. Would you care to shed some light on the intricacies of this new venture?",
+      "confidence": 0.987
+    },
+    {
+      "time": "0:30",
+      "speaker": "caller",
+      "text": "Yes, yes, I've heard rumblings here and there. Would you care to shed some light on the intricacies of this new venture? Yes.",
+      "confidence": 0.923
+    },
+    {
+      "time": "0:39",
+      "speaker": "user",
+      "text": "Yes, yes, I don't know. Okay, okay. Yeah, but it should have saved the stuff.",
+      "confidence": 0.88
+    }
+  ]
+}

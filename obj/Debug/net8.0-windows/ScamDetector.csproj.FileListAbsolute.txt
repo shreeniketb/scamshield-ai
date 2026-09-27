@@ -1,0 +1,76 @@
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.csproj.AssemblyReference.cache
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\MainWindow.baml
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\MainWindow.g.cs
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\App.g.cs
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector_MarkupCompile.cache
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.g.resources
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.AssemblyInfoInputs.cache
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.AssemblyInfo.cs
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.csproj.CoreCompileInputs.cache
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.sourcelink.json
+C:\Users\kales\VSCode Projects\scamshield-ai\bin\Debug\net8.0-windows\ScamDetector.exe
+C:\Users\kales\VSCode Projects\scamshield-ai\bin\Debug\net8.0-windows\ScamDetector.deps.json
+C:\Users\kales\VSCode Projects\scamshield-ai\bin\Debug\net8.0-windows\ScamDetector.runtimeconfig.json
+C:\Users\kales\VSCode Projects\scamshield-ai\bin\Debug\net8.0-windows\ScamDetector.dll
+C:\Users\kales\VSCode Projects\scamshield-ai\bin\Debug\net8.0-windows\ScamDetector.pdb
+C:\Users\kales\VSCode Projects\scamshield-ai\bin\Debug\net8.0-windows\NAudio.dll
+C:\Users\kales\VSCode Projects\scamshield-ai\bin\Debug\net8.0-windows\NAudio.Asio.dll
+C:\Users\kales\VSCode Projects\scamshield-ai\bin\Debug\net8.0-windows\NAudio.Core.dll
+C:\Users\kales\VSCode Projects\scamshield-ai\bin\Debug\net8.0-windows\NAudio.Midi.dll
+C:\Users\kales\VSCode Projects\scamshield-ai\bin\Debug\net8.0-windows\NAudio.Wasapi.dll
+C:\Users\kales\VSCode Projects\scamshield-ai\bin\Debug\net8.0-windows\NAudio.WinForms.dll
+C:\Users\kales\VSCode Projects\scamshield-ai\bin\Debug\net8.0-windows\NAudio.WinMM.dll
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ScamDete.97B26974.Up2Date
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.dll
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\refint\ScamDetector.dll
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.pdb
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.genruntimeconfig.cache
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\ref\ScamDetector.dll
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\CallMonitorWindow.baml
+C:\Users\kales\VSCode Projects\scamshield-ai\obj\Debug\net8.0-windows\CallMonitorWindow.g.cs
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\aasist.py
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\audio.py
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\detector.py
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\detect_ai_voice.py
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\model\aasist_epoch_8.pt
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\README.md
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\requirements.txt
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\__init__.py
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ScamDetector.exe
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ScamDetector.deps.json
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ScamDetector.runtimeconfig.json
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ScamDetector.dll
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ScamDetector.pdb
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\NAudio.dll
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\NAudio.Asio.dll
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\NAudio.Core.dll
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\NAudio.Midi.dll
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\NAudio.Wasapi.dll
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\NAudio.WinForms.dll
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\NAudio.WinMM.dll
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.csproj.AssemblyReference.cache
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\CallMonitorWindow.baml
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\CallMonitorWindow.g.cs
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\App.g.cs
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector_MarkupCompile.cache
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.g.resources
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.AssemblyInfoInputs.cache
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.AssemblyInfo.cs
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.csproj.CoreCompileInputs.cache
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.sourcelink.json
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDete.97B26974.Up2Date
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.dll
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\refint\ScamDetector.dll
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.pdb
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.genruntimeconfig.cache
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\ref\ScamDetector.dll
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\__pycache__\aasist.cpython-314.pyc
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\__pycache__\audio.cpython-314.pyc
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\__pycache__\detector.cpython-314.pyc
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\__pycache__\__init__.cpython-314.pyc
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\bin\Debug\net8.0-windows\ai_voice_detector\__pycache__\detect_ai_voice.cpython-314.pyc
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\KeySetupWindow.baml
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\App.baml
+C:\Users\kales\OneDrive\Desktop\scamshield-ai\obj\Debug\net8.0-windows\KeySetupWindow.g.cs
