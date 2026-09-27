@@ -20,11 +20,11 @@ Response to BOTH event types
 Rules:
 
 Always store the event and create an alert (severity by risk: <0.4 info, <0.7 warning, else critical).
-verify_member: if claimed_identity maps to a circle member by relation or name AND that member has can_verify=true AND risk ≥ 0.4 (medium or high) → create a verify request (expires after rules.verify_timeout_s), unless one is already pending for the same event id. This happens regardless of protection_method. The family-app prompt uses the member's name ("Is this Vanessa?"). The desktop pop-up only shows a phone number, verification message, or safe-word check in this same impersonation + medium/high case.
-prompt_safe_word: only when a safe word is set AND claimed_identity maps to a circle member AND risk ≥ 0.4.
+verify_member: only when protection_method is verify_member AND claimed_identity maps to a circle member AND risk ≥ 0.4 → create a verify request (expires after rules.verify_timeout_s), unless one is already pending for the same event id. The family-app prompt uses the member's name ("Is this Vanessa?").
+prompt_safe_word: only when protection_method is safe_word AND claimed_identity maps to a circle member AND risk ≥ 0.4. The desktop pop-up then reminds Nani to ask for the safe word — it must not say an "Is this you?" check was sent. Never send a phone number, verification message, or safe-word check on the pop-up in any other case.
 show_warning: when risk ≥ 0.7.
 Verification
-GET /api/verify/pending?member_id=u_aarav → the newest pending request or null (expire any past expires_at first; expiry → critical alert).
+GET /api/verify/pending?member_id=u_aarav → the newest pending request or null (expire any past expires_at first; expiry → critical alert). Omit member_id to return the newest pending request for anyone in the circle (the family demo phone).
 GET /api/verify/{id} → the request.
 POST /api/verify/{id}/respond body {"response":"me"|"not_me"} → updated request. "not_me" → critical alert. Verify request shape: {"id":"ver_001","circle_id":"circle_nani","senior_id":"u_nani","claimed_member_id":"u_aarav","claimed_member_name":"Kale", "reason":"Someone claiming to be Kale is on a WhatsApp call with Nani right now.","source_event_id":"call_001", "status":"pending","created_at":"...","expires_at":"...","responded_at":null} status ∈ pending | confirmed | denied | expired.
 Payments

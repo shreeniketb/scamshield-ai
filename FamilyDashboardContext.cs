@@ -35,8 +35,9 @@ namespace ScamDetector
             return new
             {
                 protection_method = ProtectionMethod,
-                verify_hold_instruction =
-                    "If the caller claims to be someone listed here and risk is medium or high, tell the user to put the call on hold. Use that person's real name, for example \"Is this Vanessa?\". Only then may you mention their saved phone number or the family safe word. Never mention a phone number, verification check, or safe word in any other case.",
+                verify_hold_instruction = UsesSafeWord()
+                    ? "If the caller claims to be someone listed here and risk is medium or high, tell the user to ask the caller for the family safe word. Do not mention an \"Is this …?\" check or the family app. You may mention their saved phone number. Never print the actual safe word. Never mention a phone number or safe word in any other case."
+                    : "If the caller claims to be someone listed here and risk is medium or high, tell the user to put the call on hold. Use that person's real name, for example \"Is this Vanessa?\". You may mention their saved phone number. Do not mention the family safe word. Never mention a phone number or verification check in any other case.",
                 people = Contacts.Select(c => new
                 {
                     name = c.Name,
@@ -49,8 +50,14 @@ namespace ScamDetector
 
         public static string IsThisName(string name) => $"Is this {name}?";
 
+        public static bool UsesSafeWord() =>
+            ProtectionMethod.Equals("safe_word", StringComparison.OrdinalIgnoreCase);
+
         public static string HoldForVerifyAction(string name) =>
             $"Put the call on hold. We sent an \"{IsThisName(name)}\" check to {name} on the family app. Wait for their answer before you continue.";
+
+        public static string AskSafeWordAction() =>
+            "Ask the caller for your family safe word. If they cannot say it, hang up immediately.";
 
         public static bool IsMediumOrHigh(ScamVerdict verdict) =>
             verdict.ScamLikelihood >= 40
@@ -59,7 +66,9 @@ namespace ScamDetector
 
         public static bool ShouldHoldForVerify(ScamVerdict verdict, out Contact? contact)
         {
-            contact = MatchContact(verdict.ClaimedIdentity);
+            contact = MatchContact(verdict.ClaimedIdentity)
+                ?? MatchContact(verdict.Summary)
+                ?? MatchContact(verdict.RecommendedAction);
             return contact != null && IsMediumOrHigh(verdict);
         }
 
@@ -67,11 +76,12 @@ namespace ScamDetector
         {
             if (ShouldHoldForVerify(verdict, out var impersonated) && impersonated != null)
             {
-                var parts = new List<string> { HoldForVerifyAction(impersonated.Name) };
+                var parts = new List<string>
+                {
+                    UsesSafeWord() ? AskSafeWordAction() : HoldForVerifyAction(impersonated.Name)
+                };
                 if (HasPhone(impersonated))
-                    parts.Add($"You can also call {impersonated.Name} at {impersonated.Phone} — a number you already have.");
-                if (!string.IsNullOrWhiteSpace(SafeWord))
-                    parts.Add("Ask the caller for your family safe word. If they cannot say it, hang up immediately.");
+                    parts.Add($"You can also call {impersonated.Name} at {impersonated.Phone} - a number you already have.");
                 return string.Join(" ", parts);
             }
 
@@ -97,10 +107,26 @@ namespace ScamDetector
         private static Contact? MatchContact(string? claimed)
         {
             if (string.IsNullOrWhiteSpace(claimed)) return null;
-            string wanted = claimed.Trim().ToLowerInvariant();
-            return Contacts.FirstOrDefault(c =>
-                c.Relation.Equals(wanted, StringComparison.OrdinalIgnoreCase)
-                || c.Name.Equals(wanted, StringComparison.OrdinalIgnoreCase));
+            string wanted = Regex.Replace(claimed.Trim().ToLowerInvariant(), @"[^a-z0-9\s]", " ");
+            wanted = Regex.Replace(wanted, @"\s+", " ").Trim();
+            if (wanted.Length == 0) return null;
+            return Contacts.FirstOrDefault(c => Aliases(c).Any(alias =>
+                wanted == alias || Regex.IsMatch(wanted, $@"(?:^|\s){Regex.Escape(alias).Replace(" ", @"\s+")}(?:\s|$)")));
+        }
+
+        private static IEnumerable<string> Aliases(Contact contact)
+        {
+            var aliases = new List<string> { contact.Name, contact.Relation };
+            string relation = (contact.Relation ?? "").ToLowerInvariant();
+            if (contact.Id == "u_aarav" || relation == "grandson")
+                aliases.AddRange(new[] { "grandson", "grand son", "grandkid", "grandchild", "kale", "aarav" });
+            if (contact.Id == "u_priya" || relation == "daughter")
+                aliases.AddRange(new[] { "daughter", "vanessa", "priya" });
+            if (contact.Id == "u_raj") aliases.Add("shreeniket");
+            return aliases
+                .Select(value => Regex.Replace((value ?? "").Trim().ToLowerInvariant(), @"\s+", " "))
+                .Where(value => value.Length > 0)
+                .Distinct();
         }
 
         private static bool HasPhone(Contact contact)

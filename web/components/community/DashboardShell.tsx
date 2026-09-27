@@ -10,7 +10,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             <p className="font-display text-xl text-brand">ScamShield</p>
             <p className="text-sm text-muted">Community Watch</p>
           </div>
-          <nav className="flex flex-wrap gap-2" aria-label="Dashboard">
+          <nav className="no-print flex flex-wrap gap-2" aria-label="Dashboard">
             <Link
               href="/family"
               className="inline-flex min-h-12 items-center rounded-pill px-4 text-sm text-ink hover:bg-brand-soft"
@@ -26,7 +26,9 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           </nav>
         </div>
       </header>
-      <div className="mx-auto grid max-w-[1440px] grid-cols-12 gap-6 px-6 py-6">{children}</div>
+      <div className="mx-auto grid w-full min-w-0 max-w-[1440px] grid-cols-12 gap-6 px-4 py-6 sm:px-6">
+        {children}
+      </div>
     </div>
   );
 }

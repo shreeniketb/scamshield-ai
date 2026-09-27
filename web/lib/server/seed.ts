@@ -77,7 +77,7 @@ async function syncMemberNames(db: Db) {
 }
 
 export const ATLANTA_ZIPS_SOURCE = "scamshield_atlanta_zips";
-export const ATLANTA_CAMPAIGNS_SOURCE = "scamshield_atlanta_demo";
+export const ATLANTA_CAMPAIGNS_SOURCE = "scamshield_atlanta_demo_v2";
 
 export async function seedCommunityBaseline(db: Db) {
   const { community_zips, campaigns, community_networks } = collections(db);
