@@ -140,7 +140,7 @@ namespace ScamDetector
 
                 TxtAiVoiceResult.Text       = label;
                 TxtAiVoiceResult.Foreground = new SolidColorBrush(color);
-                TxtAiVoiceDetail.Text       = $"AI: {r.AiProbability * 100:F1}%  |  Human: {r.RealProbability * 100:F1}%";
+                TxtAiVoiceDetail.Text       = $"AI: {r.AiProbability * 100:F1}%  |  Human: {(1 - r.AiProbability) * 100:F1}%";
                 AiVoiceBorder.BorderBrush   = new SolidColorBrush(color);
                 AiVoiceBorder.Visibility    = Visibility.Visible;
             });
