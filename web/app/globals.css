@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f7f4ee;
+  --surface: #ffffff;
+  --ink: #1c2230;
+  --muted: #5b6474;
+  --line: #e7e1d6;
+  --brand: #0f5257;
+  --brand-soft: #e3f0ee;
+  --attention: #8a5a0b;
+  --attention-soft: #fbf1de;
+  --critical: #b42318;
+  --critical-soft: #fdecea;
+  --safe: #2f7d4f;
+  --safe-soft: #e6f4ea;
+  --chart-1: #0072b2;
+  --chart-2: #e69f00;
+  --chart-3: #009e73;
+  --chart-4: #cc79a7;
+  --chart-5: #56b4e9;
+  --chart-6: #d55e00;
+  --shadow-card: 0 1px 2px rgba(28, 34, 48, 0.06), 0 8px 24px rgba(28, 34, 48, 0.06);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-attention: var(--attention);
+  --color-attention-soft: var(--attention-soft);
+  --color-critical: var(--critical);
+  --color-critical-soft: var(--critical-soft);
+  --color-safe: var(--safe);
+  --color-safe-soft: var(--safe-soft);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-fraunces);
+  --radius-card: 16px;
+  --radius-sheet: 24px;
+  --radius-pill: 999px;
+  --shadow-card: var(--shadow-card);
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-sheet-up {
+  animation: sheet-up 200ms ease-out;
+}
+
+.animate-toast-in {
+  animation: toast-in 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -51,7 +51,12 @@ namespace ScamDetector
         ## Output
         - summary: one or two plain sentences the user can read at a glance during a call.
         - reasons: each distinct red flag, most important first. Each needs a category, a short explanation, and evidence quoting the caller's exact words from the transcript with that line's time. Use an empty list if there are no red flags. Never invent or alter quotes.
-        - recommended_action: one short, practical instruction, such as "Hang up and call your bank using the number on the back of your card." If the call seems fine, say so briefly.
+        - recommended_action: one short, practical instruction, such as "Hang up and call your bank using the number on the back of your card." If the call seems fine, say so briefly. If the caller claims to be someone close to the user (such as a family member), add a short reminder to ask the caller for a safe word.
+        - scam_type: the single best-matching scam type, or "none" if the call looks legitimate, or "other" if it is a scam that fits none of the listed types. Pick "family_impersonation" when the caller claims to be a relative, including a possible AI-cloned voice. Payment methods such as gift cards or cash are never a scam type.
+        - claimed_identity: who the caller says they are, as a short lowercase relation or role ("grandson", "daughter", "bank officer", "irs agent"). Empty string if they have not said.
+        - claimed_organization: the company or agency the caller says they represent ("Chase", "Medicare", "IRS"). Empty string if none.
+        - requested_amount: the US dollar amount the caller has asked for, as a number. 0 if no amount has been named.
+        - payment_method: how the caller wants to be paid, or "none" if no payment has been asked for.
 
         Keep all text short. The user is reading it in the middle of a call.
         """;
@@ -106,9 +111,36 @@ namespace ScamDetector
                 "additionalProperties": false
               }
             },
-            "recommended_action": { "type": "string" }
+            "recommended_action": { "type": "string" },
+            "scam_type": {
+              "type": "string",
+              "enum": [
+                "none",
+                "family_impersonation",
+                "bank_impersonation",
+                "government_impersonation",
+                "irs_refund",
+                "medicare",
+                "utility_shutoff",
+                "toll",
+                "delivery",
+                "tech_support",
+                "prize_lottery",
+                "investment_crypto",
+                "romance",
+                "other"
+              ]
+            },
+            "claimed_identity":     { "type": "string" },
+            "claimed_organization": { "type": "string" },
+            "requested_amount":     { "type": "number" },
+            "payment_method": {
+              "type": "string",
+              "enum": ["none", "gift_cards", "cash", "wire", "crypto", "bank_transfer", "payment_app", "other"]
+            }
           },
-          "required": ["scam_likelihood", "risk_level", "enough_information", "summary", "reasons", "recommended_action"],
+          "required": ["scam_likelihood", "risk_level", "enough_information", "summary", "reasons", "recommended_action",
+                       "scam_type", "claimed_identity", "claimed_organization", "requested_amount", "payment_method"],
           "additionalProperties": false
         }
         """;
@@ -125,6 +157,13 @@ namespace ScamDetector
         [JsonPropertyName("summary")]            public string Summary           { get; set; } = "";
         [JsonPropertyName("reasons")]            public List<ScamReason> Reasons { get; set; } = new();
         [JsonPropertyName("recommended_action")] public string RecommendedAction { get; set; } = "";
+
+        // Extra fields for the family dashboard. Scoring and risk_level are unchanged.
+        [JsonPropertyName("scam_type")]            public string  ScamType            { get; set; } = "none";
+        [JsonPropertyName("claimed_identity")]     public string  ClaimedIdentity     { get; set; } = "";
+        [JsonPropertyName("claimed_organization")] public string  ClaimedOrganization { get; set; } = "";
+        [JsonPropertyName("requested_amount")]     public decimal RequestedAmount     { get; set; }
+        [JsonPropertyName("payment_method")]       public string  PaymentMethod       { get; set; } = "none";
     }
 
     public class ScamReason

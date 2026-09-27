@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
+    <DefaultItemExcludes>$(DefaultItemExcludes);desktop/**;web/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

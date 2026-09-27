@@ -17,8 +17,15 @@
                      Background="#2D2D30" Foreground="White" BorderBrush="#555"/>
 
         <TextBlock Text="Grok (xAI) Key:" Foreground="White" FontWeight="Bold" Margin="0,0,0,4"/>
-        <PasswordBox x:Name="TxtGrok" Padding="6" Margin="0,0,0,20"
+        <PasswordBox x:Name="TxtGrok" Padding="6" Margin="0,0,0,14"
                      Background="#2D2D30" Foreground="White" BorderBrush="#555"/>
+
+        <TextBlock Text="Family dashboard URL (optional):" Foreground="White" FontWeight="Bold" Margin="0,0,0,4"/>
+        <TextBox x:Name="TxtDashboardUrl" Padding="6" Margin="0,0,0,6"
+                 Background="#2D2D30" Foreground="White" BorderBrush="#555"
+                 Text="http://localhost:3000"/>
+        <TextBlock Text="Leave as localhost for a local web app, or paste your Vercel URL. Not required to start."
+                   Foreground="#AAAAAA" TextWrapping="Wrap" Margin="0,0,0,20"/>
 
         <Button x:Name="BtnSave" Content="Save and Start ScamShield"
                 Height="38" Click="BtnSave_Click"

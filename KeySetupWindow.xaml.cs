@@ -22,6 +22,13 @@ namespace ScamDetector
                 Grok       = TxtGrok.Password.Trim()
             };
             keys.Save();
+
+            var dash = DashboardSettings.Load();
+            if (!string.IsNullOrWhiteSpace(TxtDashboardUrl.Text))
+                dash.ServerUrl = TxtDashboardUrl.Text.Trim();
+            dash.Save();
+            DashboardBridge.ReloadSettings();
+
             Close();
         }
     }

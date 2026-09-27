@@ -41,6 +41,7 @@ namespace ScamDetector
 
             // Start the main logic (recording, detection, watcher) hidden
             MainLogic.Initialize(OpenMonitor);
+            DashboardBridge.Attach();
 
             // Build tray icon
             var bitmap = new Bitmap(16, 16);

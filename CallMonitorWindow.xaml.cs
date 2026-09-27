@@ -28,6 +28,7 @@ namespace ScamDetector
             MainLogic.RecordingStopped += OnRecordingStopped;
             MainLogic.VerdictReset     += OnVerdictReset;
             MainLogic.AiVoiceError     += OnAiVoiceError;
+            DashboardBridge.FamilyMessage += OnFamilyMessage;
 
             _clock.Tick += (_, _) => UpdateClock();
 
@@ -181,6 +182,13 @@ namespace ScamDetector
                     ? note : TxtRiskSummary.Text + "\n" + note;
             });
 
+        private void OnFamilyMessage(string message) =>
+            Dispatcher.Invoke(() =>
+            {
+                TxtRiskSummary.Text = string.IsNullOrEmpty(TxtRiskSummary.Text)
+                    ? message : TxtRiskSummary.Text + "\n" + message;
+            });
+
         // ── Clock ─────────────────────────────────────────────────────────────
         private void UpdateClock()
         {
@@ -226,6 +234,7 @@ namespace ScamDetector
             MainLogic.RecordingStopped -= OnRecordingStopped;
             MainLogic.VerdictReset     -= OnVerdictReset;
             MainLogic.AiVoiceError     -= OnAiVoiceError;
+            DashboardBridge.FamilyMessage -= OnFamilyMessage;
         }
 
         public void ForceClose() { _forceClose = true; Close(); }
