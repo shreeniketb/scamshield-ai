@@ -109,7 +109,7 @@
   "protection": {
     "actions_taken": [
       {"time": 12.9, "type": "show_warning", "detail": "Warning shown to Nani: this voice may be computer-generated"},
-      {"time": 13.0, "type": "verify_member", "detail": "Asked Aarav: is this you?", "verify_id": "ver_001"},
+      {"time": 13.0, "type": "verify_member", "detail": "Asked Kale: Is this Kale?", "verify_id": "ver_001"},
       {"time": 31.0, "type": "prompt_safe_word", "detail": "Prompted Nani to ask for the family safe word"}
     ],
     "verification": {

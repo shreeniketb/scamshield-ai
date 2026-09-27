@@ -35,6 +35,8 @@ namespace ScamDetector
             return new
             {
                 protection_method = ProtectionMethod,
+                verify_hold_instruction =
+                    "If the caller claims to be someone listed here and risk is medium or high, tell the user to put the call on hold. Use that person's real name, for example \"Is this Vanessa?\". Only then may you mention their saved phone number or the family safe word. Never mention a phone number, verification check, or safe word in any other case.",
                 people = Contacts.Select(c => new
                 {
                     name = c.Name,
@@ -45,24 +47,35 @@ namespace ScamDetector
             };
         }
 
+        public static string IsThisName(string name) => $"Is this {name}?";
+
+        public static string HoldForVerifyAction(string name) =>
+            $"Put the call on hold. We sent an \"{IsThisName(name)}\" check to {name} on the family app. Wait for their answer before you continue.";
+
+        public static bool IsMediumOrHigh(ScamVerdict verdict) =>
+            verdict.ScamLikelihood >= 40
+            || verdict.RiskLevel.Equals("medium", StringComparison.OrdinalIgnoreCase)
+            || verdict.RiskLevel.Equals("high", StringComparison.OrdinalIgnoreCase);
+
+        public static bool ShouldHoldForVerify(ScamVerdict verdict, out Contact? contact)
+        {
+            contact = MatchContact(verdict.ClaimedIdentity);
+            return contact != null && IsMediumOrHigh(verdict);
+        }
+
         public static string EnrichAction(string action, ScamVerdict verdict)
         {
-            var parts = new List<string>();
-            if (!string.IsNullOrWhiteSpace(action)) parts.Add(action.Trim());
-
-            if (ProtectionMethod.Equals("safe_word", StringComparison.OrdinalIgnoreCase)
-                && !ContainsSafeWordHint(action))
+            if (ShouldHoldForVerify(verdict, out var impersonated) && impersonated != null)
             {
-                parts.Add("Ask the caller for your family safe word. If they cannot say it, hang up immediately.");
+                var parts = new List<string> { HoldForVerifyAction(impersonated.Name) };
+                if (HasPhone(impersonated))
+                    parts.Add($"You can also call {impersonated.Name} at {impersonated.Phone} — a number you already have.");
+                if (!string.IsNullOrWhiteSpace(SafeWord))
+                    parts.Add("Ask the caller for your family safe word. If they cannot say it, hang up immediately.");
+                return string.Join(" ", parts);
             }
 
-            var contact = MatchContact(verdict.ClaimedIdentity) ?? Contacts.FirstOrDefault(c => c.CanVerify && HasPhone(c));
-            if (contact != null && HasPhone(contact) && action.IndexOf(contact.Phone, StringComparison.OrdinalIgnoreCase) < 0)
-            {
-                parts.Add($"Call {contact.Name} at {contact.Phone} to verify identity.");
-            }
-
-            return string.Join(" ", parts.Where(p => p.Length > 0));
+            return WithoutIdentityChecks(action);
         }
 
         public static string? CheckSafeWord(string transcript)
@@ -96,7 +109,17 @@ namespace ScamDetector
             return digits.Length >= 10;
         }
 
-        private static bool ContainsSafeWordHint(string action) =>
-            action.IndexOf("safe word", StringComparison.OrdinalIgnoreCase) >= 0;
+        private static string WithoutIdentityChecks(string action)
+        {
+            if (string.IsNullOrWhiteSpace(action)) return "";
+            var kept = Regex.Split(action.Trim(), @"(?<=[.!?])\s+")
+                .Where(sentence =>
+                    sentence.IndexOf("safe word", StringComparison.OrdinalIgnoreCase) < 0
+                    && sentence.IndexOf("is this ", StringComparison.OrdinalIgnoreCase) < 0
+                    && sentence.IndexOf("verify identity", StringComparison.OrdinalIgnoreCase) < 0
+                    && sentence.IndexOf("family app", StringComparison.OrdinalIgnoreCase) < 0
+                    && !Regex.IsMatch(sentence, @"\d{3}[\s.\-)]*\d{3}[\s.\-]*\d{4}"));
+            return string.Join(" ", kept).Trim();
+        }
     }
 }

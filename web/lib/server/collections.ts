@@ -6,9 +6,11 @@ import type {
   CircleHealthWeek,
   CircleMember,
   CircleRules,
+  MapZip,
   Payment,
   StateStat,
   VerifyRequest,
+  WarningNetwork,
 } from "../types";
 
 // The circle as stored. safe_word never leaves the server except through
@@ -92,6 +94,14 @@ export type CommunityStateDoc = StateStat & {
   year: number;
 };
 
+export type CommunityZipDoc = MapZip & {
+  source: string;
+};
+
+export type CommunityNetworkDoc = WarningNetwork & {
+  source?: string;
+};
+
 export function collections(db: Db) {
   return {
     circles: db.collection<CircleDoc>("circles"),
@@ -100,7 +110,9 @@ export function collections(db: Db) {
     alerts: db.collection<Alert>("alerts"),
     verifies: db.collection<VerifyRequest & Seeded>("verifies"),
     payments: db.collection<Payment & Seeded>("payments"),
-    campaigns: db.collection<Campaign & Seeded & { from_call_id?: string }>("campaigns"),
+    campaigns: db.collection<Campaign & Seeded & { from_call_id?: string; source?: string }>("campaigns"),
     community_states: db.collection<CommunityStateDoc>("community_states"),
+    community_zips: db.collection<CommunityZipDoc>("community_zips"),
+    community_networks: db.collection<CommunityNetworkDoc>("community_networks"),
   };
 }

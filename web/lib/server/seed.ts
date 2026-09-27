@@ -1,7 +1,12 @@
 import type { Db } from "mongodb";
 import { ic3ElderFraud2025, IC3_STATES_SOURCE, IC3_STATES_YEAR } from "../data/ic3ElderFraud2025";
 import { getDb } from "../db";
-import { circleHealthWeeks } from "../mock/community";
+import {
+  atlantaZips,
+  campaigns as demoCampaigns,
+  circleHealthWeeks,
+  warningNetworkFor,
+} from "../mock/community";
 import { seedCircle, seedSettings } from "../mock/seed";
 import { collections, type CircleDoc } from "./collections";
 
@@ -71,6 +76,41 @@ async function syncMemberNames(db: Db) {
   await collections(db).circles.updateOne({ id: CIRCLE_ID }, { $set: { members: renamed, rules } });
 }
 
+export const ATLANTA_ZIPS_SOURCE = "scamshield_atlanta_zips";
+export const ATLANTA_CAMPAIGNS_SOURCE = "scamshield_atlanta_demo";
+
+export async function seedCommunityBaseline(db: Db) {
+  const { community_zips, campaigns, community_networks } = collections(db);
+  const zipReady = await community_zips.countDocuments({ source: ATLANTA_ZIPS_SOURCE });
+  if (zipReady !== atlantaZips.length) {
+    await community_zips.deleteMany({ source: ATLANTA_ZIPS_SOURCE });
+    await community_zips.insertMany(atlantaZips.map((zip) => ({ ...zip, source: ATLANTA_ZIPS_SOURCE })));
+  }
+
+  const campReady = await campaigns.countDocuments({ source: ATLANTA_CAMPAIGNS_SOURCE });
+  if (campReady !== demoCampaigns.length) {
+    await campaigns.deleteMany({ seeded: true });
+    await campaigns.insertMany(
+      demoCampaigns.map((campaign) => ({
+        ...campaign,
+        seeded: true,
+        source: ATLANTA_CAMPAIGNS_SOURCE,
+      })),
+    );
+  }
+
+  const netReady = await community_networks.countDocuments({ source: ATLANTA_CAMPAIGNS_SOURCE });
+  if (netReady !== demoCampaigns.length) {
+    await community_networks.deleteMany({ source: ATLANTA_CAMPAIGNS_SOURCE });
+    await community_networks.insertMany(
+      demoCampaigns.map((campaign) => ({
+        ...warningNetworkFor(campaign),
+        source: ATLANTA_CAMPAIGNS_SOURCE,
+      })),
+    );
+  }
+}
+
 export async function resetDemo(db: Db) {
   const c = collections(db);
   await Promise.all([
@@ -79,8 +119,11 @@ export async function resetDemo(db: Db) {
     c.verifies.deleteMany({}),
     c.payments.deleteMany({}),
     c.reports.deleteMany({}),
+    c.campaigns.deleteMany({ seeded: { $ne: true } }),
+    c.community_networks.deleteMany({ source: { $ne: ATLANTA_CAMPAIGNS_SOURCE } }),
   ]);
   await c.circles.replaceOne({ id: CIRCLE_ID }, defaultCircle(), { upsert: true });
+  await seedCommunityBaseline(db);
 }
 
 export async function seedIc3States(db: Db) {
@@ -113,6 +156,7 @@ export async function getSeededDb(): Promise<Db> {
     await clearSeededHistory(db);
   }
   await seedIc3States(db);
+  await seedCommunityBaseline(db);
   seededThisProcess = true;
   return db;
 }

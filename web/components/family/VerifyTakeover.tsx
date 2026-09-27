@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { getPendingVerify, respondVerify } from "@/lib/api";
 import { subscribeBus } from "@/lib/mock/bus";
 import type { VerifyRequest } from "@/lib/types";
+import { isThisName } from "@/lib/verifyCopy";
 
 type Phase = "idle" | "ask" | "not_me" | "confirmed" | "expired";
 
@@ -97,7 +98,7 @@ export function VerifyTakeover({ memberId = "u_aarav" }: { memberId?: string }) 
         {phase === "ask" ? (
           <>
             <h2 id="verify-title" className="mt-6 font-display text-[32px] leading-tight text-ink">
-              Is this you?
+              {isThisName(verify.claimed_member_name)}
             </h2>
             <p className="mt-3 text-[20px] text-ink">{verify.reason}</p>
             <div className="mt-8 flex justify-center">

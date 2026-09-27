@@ -9,6 +9,7 @@ import {
   type MessageCheckEvent,
   type SafeWordEvent,
 } from "./collections";
+import { isThisName } from "../verifyCopy";
 import { phoneKey } from "./http";
 import { scamTypeInfo, signalForCue } from "./scamTypes";
 
@@ -63,7 +64,7 @@ function protectionFor(startedAt: string, ctx: Context): CallReport["protection"
     actions.push({
       time: secondsBetween(startedAt, verify.created_at),
       type: "verify_member",
-      detail: `Asked ${verify.claimed_member_name}: is this you?`,
+      detail: `Asked ${verify.claimed_member_name}: ${isThisName(verify.claimed_member_name)}`,
       verify_id: verify.id,
     });
   }

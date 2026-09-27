@@ -316,7 +316,7 @@ namespace ScamDetector
             return string.Join(" ", response.Actions.Select(a => a.Type switch
             {
                 "prompt_safe_word" => a.Message ?? "Ask the caller for your family safe word.",
-                "verify_member"    => "Family is being asked: is this you?",
+                "verify_member"    => a.Message ?? "Put the call on hold. We sent an identity check to the family app.",
                 "show_warning"     => a.Message ?? "Show a warning.",
                 _                  => a.Type
             }));

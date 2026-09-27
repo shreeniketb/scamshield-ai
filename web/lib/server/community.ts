@@ -1,14 +1,23 @@
 import type { Db } from "mongodb";
 import {
-  atlantaZips,
-  campaigns as baseCampaigns,
   communitySummary as baseSummary,
+  mutationPointsFor,
   scamTypeTotals as baseScamTypes,
+  warningNetworkFor,
 } from "../mock/community";
-import type { CallReport, Campaign, CommunitySummary, MapZip, ScamTypeTotal, StateStat } from "../types";
+import type {
+  CallReport,
+  Campaign,
+  CommunitySummary,
+  MapZip,
+  MutationPoint,
+  ScamTypeTotal,
+  StateStat,
+  WarningNetwork,
+} from "../types";
 import { collections, type CircleDoc } from "./collections";
 import { listReports } from "./reports";
-import { CIRCLE_ID, seedIc3States } from "./seed";
+import { CIRCLE_ID, seedCommunityBaseline, seedIc3States } from "./seed";
 import { scamTypeInfo } from "./scamTypes";
 
 // Community Watch = the demo baseline (labelled "Demo data") plus every real
@@ -90,31 +99,72 @@ export async function createCampaignFromCall(db: Db, callId: string): Promise<Ca
     from_call_id: callId,
   };
   await collections(db).campaigns.replaceOne({ id: campaign.id }, campaign, { upsert: true });
+  await collections(db).community_networks.replaceOne(
+    { campaign_id: campaign.id },
+    warningNetworkFor(campaign),
+    { upsert: true },
+  );
+  return campaign;
+}
+
+function toCampaign(doc: Campaign & { _id?: unknown; seeded?: boolean; from_call_id?: string; source?: string }): Campaign {
+  const { _id: _drop, seeded: _s, from_call_id: _f, source: _src, ...campaign } = doc;
   return campaign;
 }
 
 export async function getCampaigns(db: Db): Promise<Campaign[]> {
-  const live = await collections(db).campaigns.find({}).toArray();
-  const liveMapped = live.map(({ _id, seeded, from_call_id, ...campaign }) => campaign as Campaign);
-  const recent = (await liveReports(db)).filter(inLast24h);
-  const baseline = baseCampaigns.map((campaign) => {
+  await seedCommunityBaseline(db);
+  const [docs, recent] = await Promise.all([
+    collections(db).campaigns.find({}).toArray(),
+    liveReports(db).then((reports) => reports.filter(inLast24h)),
+  ]);
+  const live = docs.filter((doc) => !doc.seeded).map(toCampaign);
+  const baseline = docs.filter((doc) => doc.seeded).map((doc) => {
+    const campaign = toCampaign(doc);
     const extra = recent.filter((report) => campaignIdOf(report) === campaign.id).length;
     if (!extra) return campaign;
     const trend = [...campaign.trend];
     trend[trend.length - 1] += extra;
     return { ...campaign, reports_24h: campaign.reports_24h + extra, trend };
   });
-  return [...liveMapped, ...baseline];
+  return [...live, ...baseline];
+}
+
+export async function getStoredCampaign(db: Db, id: string): Promise<Campaign | null> {
+  const all = await getCampaigns(db);
+  return all.find((campaign) => campaign.id === id) ?? null;
+}
+
+export async function getCampaignPoints(db: Db, id: string): Promise<MutationPoint[] | null> {
+  const campaign = await getStoredCampaign(db, id);
+  if (!campaign) return null;
+  return mutationPointsFor(campaign);
+}
+
+export async function getCampaignNetwork(db: Db, id: string): Promise<WarningNetwork | null> {
+  await seedCommunityBaseline(db);
+  const existing = await collections(db).community_networks.findOne(
+    { campaign_id: id },
+    { projection: { _id: 0, source: 0 } },
+  );
+  if (existing) return existing;
+  const campaign = await getStoredCampaign(db, id);
+  if (!campaign) return null;
+  const network = warningNetworkFor(campaign);
+  await collections(db).community_networks.replaceOne({ campaign_id: id }, network, { upsert: true });
+  return network;
 }
 
 export async function getMap(db: Db): Promise<MapZip[]> {
+  await seedCommunityBaseline(db);
   const c = collections(db);
-  const [recent, circle] = await Promise.all([
+  const [zips, recent, circle] = await Promise.all([
+    c.community_zips.find({}, { projection: { _id: 0, source: 0 } }).toArray(),
     liveReports(db).then((reports) => reports.filter(inLast24h)),
     c.circles.findOne({ id: CIRCLE_ID }),
   ]);
-  if (!recent.length || !circle) return atlantaZips;
-  return atlantaZips.map((zip) =>
+  if (!recent.length || !circle) return zips;
+  return zips.map((zip) =>
     zip.zip === circle.zip ? { ...zip, reports_24h: zip.reports_24h + recent.length } : zip,
   );
 }

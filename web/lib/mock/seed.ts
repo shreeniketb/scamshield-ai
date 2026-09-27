@@ -101,7 +101,7 @@ export const seedVerifies: VerifyRequest[] = [
     senior_id: "u_nani",
     claimed_member_id: "u_aarav",
     claimed_member_name: "Kale",
-    reason: "Someone claiming to be you is on a WhatsApp call with Nani right now.",
+    reason: "Someone claiming to be Kale is on a WhatsApp call with Nani right now.",
     source_event_id: "call_20260925_001",
     status: "denied",
     created_at: "2026-09-25T18:42:20Z",
