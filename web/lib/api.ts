@@ -176,6 +176,11 @@ export async function getCommunitySummary(): Promise<CommunitySummary> {
   return realGet<CommunitySummary>("/api/community/summary");
 }
 
+export async function warnCommunity(callId: string) {
+  if (useMocks) return { ok: true };
+  return realSend<{ ok: boolean; campaign?: Campaign }>("POST", "/api/community/campaigns", { call_id: callId });
+}
+
 export async function getScamTypes(): Promise<ScamTypeTotal[]> {
   if (useMocks) return getStore().scamTypes;
   return realGet<ScamTypeTotal[]>("/api/community/scam-types");
@@ -252,7 +257,7 @@ export async function triggerVoiceCloneVerify(): Promise<{ id: string }> {
     circle_id: CIRCLE,
     senior_id: "u_nani",
     claimed_member_id: "u_aarav",
-    claimed_member_name: "Aarav",
+    claimed_member_name: "Kale",
     reason: "Someone claiming to be you is on a WhatsApp call with Nani right now.",
     source_event_id: "call_20260925_001",
     status: "pending",

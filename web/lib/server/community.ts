@@ -57,15 +57,53 @@ export async function getSummary(db: Db): Promise<CommunitySummary> {
   };
 }
 
+export async function createCampaignFromCall(db: Db, callId: string): Promise<Campaign | null> {
+  const circle = await collections(db).circles.findOne({ id: CIRCLE_ID });
+  if (!circle) return null;
+  const report = (await listReports(db, circle as CircleDoc)).find((item) => item.call_id === callId);
+  if (!report) return null;
+
+  const existing = await collections(db).campaigns.findOne({ from_call_id: callId });
+  if (existing) {
+    const { _id: _drop, seeded: _s, from_call_id: _f, ...rest } = existing as Campaign & {
+      _id?: unknown;
+      seeded?: boolean;
+      from_call_id?: string;
+    };
+    return rest;
+  }
+
+  const label = scamTypeInfo(report.overall.scam_type).label;
+  const campaign: Campaign & { from_call_id: string } = {
+    id: `camp_${callId}`,
+    name: `${label} reported from Nani's circle`,
+    channels: [report.channel === "whatsapp_message" ? "sms" : "call"],
+    reports_24h: 1,
+    trend: [0, 0, 0, 0, 0, 0, 1],
+    first_seen: report.started_at,
+    areas: [circle.zip],
+    example_redacted: report.family_summary || report.report_summary,
+    how_to_spot: report.recommended_action.message || report.report_summary,
+    severity: report.overall.risk_score >= 0.7 ? "critical" : "warning",
+    variant_names: [label],
+    from_call_id: callId,
+  };
+  await collections(db).campaigns.replaceOne({ id: campaign.id }, campaign, { upsert: true });
+  return campaign;
+}
+
 export async function getCampaigns(db: Db): Promise<Campaign[]> {
+  const live = await collections(db).campaigns.find({}).toArray();
+  const liveMapped = live.map(({ _id, seeded, from_call_id, ...campaign }) => campaign as Campaign);
   const recent = (await liveReports(db)).filter(inLast24h);
-  return baseCampaigns.map((campaign) => {
+  const baseline = baseCampaigns.map((campaign) => {
     const extra = recent.filter((report) => campaignIdOf(report) === campaign.id).length;
     if (!extra) return campaign;
     const trend = [...campaign.trend];
     trend[trend.length - 1] += extra;
     return { ...campaign, reports_24h: campaign.reports_24h + extra, trend };
   });
+  return [...liveMapped, ...baseline];
 }
 
 export async function getMap(db: Db): Promise<MapZip[]> {

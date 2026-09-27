@@ -7,6 +7,9 @@
   "caller_id_status": "not_applicable",
   "chunk_index": 3,
   "created_at": "2026-09-26T14:05:40Z",
+  "started_at": "2026-09-26T14:04:10Z",
+  "duration_s": 90,
+  "transcript": "[0:04] caller: Grandma, it's me, I'm on a friend's phone.\n[0:12] caller: Please don't tell Mom.\n[0:21] caller: Buy Apple gift cards and send me the codes.",
 
   "risk": 0.9,
   "voice_synthetic_score": null,
@@ -21,7 +24,7 @@
   "script_cues": ["impersonation", "secrecy_or_isolation", "urgency_or_pressure", "unusual_payment_method"],
   "transcript_snippet": "Please don't tell Mom. Buy Apple gift cards and send me the codes.",
   "explanation": "The caller says he's your grandson in trouble, asks you to keep it secret, and wants $2,000 in gift cards.",
-  "recommended_action": "Hang up and call Aarav on the number you already have. Ask the caller for your family safe word.",
+  "recommended_action": "Hang up and call Kale at +1 404 555 0100 to verify identity.",
 
   "reasons": [
     {

@@ -13,7 +13,7 @@ export default function DemoPage() {
     try {
       const verify = await triggerVoiceCloneVerify();
       setLog((prev) => [
-        `${new Date().toLocaleTimeString()} · verify ${verify.id} sent to Aarav`,
+        `${new Date().toLocaleTimeString()} · verify ${verify.id} sent to Kale`,
         ...prev,
       ]);
     } catch (error) {

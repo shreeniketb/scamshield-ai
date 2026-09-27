@@ -38,6 +38,18 @@ function secondsBetween(fromIso: string, toIso: string) {
   return Math.max(0, Math.round((Date.parse(toIso) - Date.parse(fromIso)) / 100) / 10);
 }
 
+function durationFromChunks(
+  chunks: CallAnalysisEvent[],
+  transcript: CallReport["transcript"],
+  startedAt: string,
+) {
+  const last = chunks[chunks.length - 1];
+  if (last.duration_s && last.duration_s > 0) return last.duration_s;
+  const fromTimes = Math.max(0, ...transcript.map((line) => line.end || line.start || 0));
+  if (fromTimes > 0) return fromTimes;
+  return secondsBetween(last.started_at ?? startedAt, last.created_at);
+}
+
 type Context = {
   circle: CircleDoc;
   verify: VerifyRequest | undefined;
@@ -138,12 +150,27 @@ export function reportFromCallChunks(chunks: CallAnalysisEvent[], ctx: Context):
     });
   }
 
-  const transcript = sorted
-    .filter((chunk) => chunk.transcript_snippet)
-    .map((chunk) => {
-      const start = secondsBetween(startedAt, chunk.created_at);
-      return { start, end: start + 3, speaker: "caller" as const, text: chunk.transcript_snippet ?? "" };
-    });
+  const fullTranscript = last.transcript
+    ? last.transcript
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line, index) => {
+          const match = line.match(/^\[([^\]]+)\]\s+(user|caller|unknown):\s*(.*)$/i);
+          return {
+            start: match ? callTimeToSeconds(match[1]) : index * 3,
+            end: (match ? callTimeToSeconds(match[1]) : index * 3) + 3,
+            speaker: (match?.[2]?.toLowerCase() === "user" ? "senior" : "caller") as "senior" | "caller",
+            text: match?.[3] ?? line,
+          };
+        })
+    : sorted
+        .filter((chunk) => chunk.transcript_snippet)
+        .map((chunk) => {
+          const start = secondsBetween(startedAt, chunk.created_at);
+          return { start, end: start + 3, speaker: "caller" as const, text: chunk.transcript_snippet ?? "" };
+        });
+  const transcript = fullTranscript;
 
   const evidence = sorted
     .filter((chunk) => chunk.transcript_snippet && (chunk.script_cues ?? []).length > 0)
@@ -190,9 +217,9 @@ export function reportFromCallChunks(chunks: CallAnalysisEvent[], ctx: Context):
       caller_id_status: (first.caller_id_status as CallReport["caller"]["caller_id_status"]) ?? "not_applicable",
       profile_photo_matches_member: null,
     },
-    started_at: startedAt,
+    started_at: first.started_at ?? startedAt,
     ended_at: live ? null : last.created_at,
-    duration_s: secondsBetween(startedAt, last.created_at),
+    duration_s: durationFromChunks(sorted, transcript, startedAt),
     language: "en",
     status: live ? "in_progress" : "ended",
     overall: {

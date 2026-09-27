@@ -34,6 +34,18 @@ namespace ScamDetector
         // ── State readable by the UI ──────────────────────────────────────────
         public static bool    IsRecording     => _isRecording;
         public static string? LastStatusText  => _lastStatus;
+        public static int DurationSeconds =>
+            _sessionStart == default ? 0 : Math.Max(0, (int)(DateTime.Now - _sessionStart).TotalSeconds);
+        public static DateTime SessionStartedUtc =>
+            _sessionStart == default ? DateTime.UtcNow : _sessionStart.ToUniversalTime();
+
+        public static string FullTranscript()
+        {
+            lock (_conversation)
+            {
+                return string.Join("\n", _conversation.Select(line => $"[{line.Time}] {line.Speaker}: {line.Text}"));
+            }
+        }
 
         private static string? _lastStatus;
         private static Action? _openMonitorCallback;
@@ -532,6 +544,7 @@ namespace ScamDetector
                     speakers         = new { user = "Person using the app", caller = "Person on the other end" },
                     transcription_gaps = _transcriptionGaps.Count > 0 ? new List<string>(_transcriptionGaps) : null,
                     call_info          = _callInfo,
+                    family_circle      = FamilyDashboardContext.ForGrok(),
                     ai_voice           = _aiProbCount > 0 ? new { running_avg_ai_probability = Math.Round(_aiProbSum / _aiProbCount, 4), chunks_analyzed = _aiProbCount, note = "AASIST model; treat as supporting signal only" } : null,
                     conversation       = new List<ConversationLine>(_conversation)
                 };
@@ -676,7 +689,7 @@ namespace ScamDetector
             };
             return ($"{label}  ({v.ScamLikelihood}/100)", color,
                     $"As of {callTime}: {v.Summary}", FormatReasons(v),
-                    (v.RecommendedAction ?? "").Trim());
+                    FamilyDashboardContext.EnrichAction((v.RecommendedAction ?? "").Trim(), v));
         }
     }
 }

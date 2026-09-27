@@ -71,6 +71,31 @@ namespace ScamDetector
         [JsonPropertyName("claimed_member_name")] public string? ClaimedMemberName { get; set; }
     }
 
+    public class DashboardMember
+    {
+        [JsonPropertyName("id")]         public string Id { get; set; } = "";
+        [JsonPropertyName("name")]       public string Name { get; set; } = "";
+        [JsonPropertyName("relation")]   public string Relation { get; set; } = "";
+        [JsonPropertyName("phone")]      public string Phone { get; set; } = "";
+        [JsonPropertyName("can_verify")] public bool CanVerify { get; set; }
+    }
+
+    public class DashboardRules
+    {
+        [JsonPropertyName("protection_method")] public string? ProtectionMethod { get; set; }
+    }
+
+    public class DashboardCircleSettings
+    {
+        [JsonPropertyName("members")] public List<DashboardMember> Members { get; set; } = new();
+        [JsonPropertyName("rules")]   public DashboardRules Rules { get; set; } = new();
+    }
+
+    public class DashboardSafeWord
+    {
+        [JsonPropertyName("safe_word")] public string? SafeWord { get; set; }
+    }
+
     // Talks to the family web app. Kale's recording, scoring, and pop-up stay in their own files.
     public class ScamShieldApi
     {
@@ -94,7 +119,10 @@ namespace ScamDetector
             ScamVerdict verdict,
             int chunkIndex,
             string? caller,
-            double? voiceScore)
+            double? voiceScore,
+            string? transcript = null,
+            int? durationSeconds = null,
+            DateTime? startedAtUtc = null)
         {
             if (!settings.Enabled) return (null, "Dashboard sending is turned off.");
             if (string.IsNullOrEmpty(CallId)) BeginCall();
@@ -109,6 +137,9 @@ namespace ScamDetector
                 ["caller_id_status"]      = "not_applicable",
                 ["chunk_index"]           = chunkIndex,
                 ["created_at"]            = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                ["started_at"]            = (startedAtUtc ?? DateTime.UtcNow).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                ["duration_s"]            = Math.Max(0, durationSeconds ?? 0),
+                ["transcript"]            = transcript ?? "",
                 ["risk"]                  = Math.Clamp(verdict.ScamLikelihood, 0, 100) / 100.0,
                 ["voice_synthetic_score"] = voiceScore,
                 ["scam_type"]             = Blank(verdict.ScamType),
@@ -119,7 +150,7 @@ namespace ScamDetector
                 ["script_cues"]           = verdict.Reasons.Select(r => r.Category).Where(c => c.Length > 0).Distinct().ToList(),
                 ["transcript_snippet"]    = NewestQuote(verdict),
                 ["explanation"]           = verdict.Summary,
-                ["recommended_action"]    = verdict.RecommendedAction,
+                ["recommended_action"]    = FamilyDashboardContext.EnrichAction(verdict.RecommendedAction, verdict),
                 ["reasons"]               = verdict.Reasons
             };
 
@@ -146,6 +177,58 @@ namespace ScamDetector
             {
                 return (null, $"Couldn't reach the dashboard: {ex.Message}");
             }
+        }
+
+        public async Task<(DashboardCircleSettings? settings, string? error)> GetCircleSettingsAsync(DashboardSettings settings)
+        {
+            try
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Get, settings.ApiRoot() + "/circle/" + Uri.EscapeDataString(settings.CircleId.Trim()) + "/settings");
+                if (settings.DeviceToken.Trim().Length > 0)
+                    req.Headers.TryAddWithoutValidation("X-Device-Token", settings.DeviceToken.Trim());
+                using var resp = await Http.SendAsync(req);
+                string text = await resp.Content.ReadAsStringAsync();
+                if (!resp.IsSuccessStatusCode)
+                    return (null, $"Settings {(int)resp.StatusCode}: {Short(text)}");
+                return (JsonSerializer.Deserialize<DashboardCircleSettings>(text), null);
+            }
+            catch (Exception ex)
+            {
+                return (null, ex.Message);
+            }
+        }
+
+        public async Task<string?> GetSafeWordAsync(DashboardSettings settings)
+        {
+            if (settings.DeviceToken.Trim().Length == 0) return null;
+            try
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Get, settings.ApiRoot() + "/circle/" + Uri.EscapeDataString(settings.CircleId.Trim()) + "/safe-word-check-material");
+                req.Headers.TryAddWithoutValidation("X-Device-Token", settings.DeviceToken.Trim());
+                using var resp = await Http.SendAsync(req);
+                if (!resp.IsSuccessStatusCode) return null;
+                string text = await resp.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<DashboardSafeWord>(text)?.SafeWord;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task SendSafeWordResultAsync(DashboardSettings settings, string result)
+        {
+            if (string.IsNullOrEmpty(CallId)) return;
+            try
+            {
+                var body = new { call_id = CallId, result };
+                using var req = new HttpRequestMessage(HttpMethod.Post, settings.ApiRoot() + "/events/safe_word_result");
+                req.Content = new StringContent(JsonSerializer.Serialize(body, JsonOptions), Encoding.UTF8, "application/json");
+                if (settings.DeviceToken.Trim().Length > 0)
+                    req.Headers.TryAddWithoutValidation("X-Device-Token", settings.DeviceToken.Trim());
+                await Http.SendAsync(req);
+            }
+            catch { }
         }
 
         public async Task<(DashboardVerify? verify, string? error)> GetVerifyAsync(DashboardSettings settings, string verifyId)

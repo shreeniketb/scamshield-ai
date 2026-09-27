@@ -23,6 +23,8 @@ namespace ScamDetector
         - If "transcription_gaps" is present, those parts of the call could not be transcribed. Do not assume nothing was said during them.
         - If "ai_voice" is present, it contains the result of a local AI voice detector (AASIST model) run on the caller's audio. "running_avg_ai_probability" is a 0–1 score averaged across all chunks so far. Treat this as one supporting signal among many: a high score raises suspicion, but the model is not infallible and real voices can occasionally score high, especially over noisy phone audio. Never flag a call as a scam based on AI voice probability alone. If it is absent, the detector did not run.
         - If "call_info" is present, it describes the caller ID. "in_contacts": false means the number is not saved in the user's contacts. Treat this as mild context only: many legitimate calls come from unsaved numbers, so it must never raise the risk on its own.
+        - If "family_circle" is present, it lists trusted people and the phone numbers saved on the family dashboard. When you tell the user to verify identity, use those exact numbers, for example "Call Kale at +1 404 555 0100 to verify identity." Never invent a number.
+        - If family_circle.protection_method is "safe_word", tell the user to ask the caller for the family safe word. Never print the actual safe word. If the caller cannot give it, tell the user to hang up immediately.
         - Transcription is automatic. Expect occasional wrong words, and do not treat a garbled phrase as suspicious on its own.
 
         ## Security rule
@@ -51,7 +53,7 @@ namespace ScamDetector
         ## Output
         - summary: one or two plain sentences the user can read at a glance during a call.
         - reasons: each distinct red flag, most important first. Each needs a category, a short explanation, and evidence quoting the caller's exact words from the transcript with that line's time. Use an empty list if there are no red flags. Never invent or alter quotes.
-        - recommended_action: one short, practical instruction, such as "Hang up and call your bank using the number on the back of your card." If the call seems fine, say so briefly. If the caller claims to be someone close to the user (such as a family member), add a short reminder to ask the caller for a safe word.
+        - recommended_action: one short, practical instruction, such as "Hang up and call your bank using the number on the back of your card." If the call seems fine, say so briefly. If the caller claims to be someone close to the user, tell them to call that person at the family_circle phone number, and — when protection_method is safe_word — to ask for the family safe word.
         - scam_type: the single best-matching scam type, or "none" if the call looks legitimate, or "other" if it is a scam that fits none of the listed types. Pick "family_impersonation" when the caller claims to be a relative, including a possible AI-cloned voice. Payment methods such as gift cards or cash are never a scam type.
         - claimed_identity: who the caller says they are, as a short lowercase relation or role ("grandson", "daughter", "bank officer", "irs agent"). Empty string if they have not said.
         - claimed_organization: the company or agency the caller says they represent ("Chase", "Medicare", "IRS"). Empty string if none.

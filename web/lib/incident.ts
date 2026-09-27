@@ -9,7 +9,7 @@ import type {
 export function incidentFromReport(report: CallReport): Incident {
   const cues: CueChip[] = [];
 
-  if (report.audio_forensics) {
+  if (report.audio_forensics && report.audio_forensics.synthetic_probability > 0.7) {
     cues.push({
       group: "voice",
       label: "Likely computer-generated voice",
@@ -98,5 +98,8 @@ export function incidentFromReport(report: CallReport): Incident {
     evidence: report.evidence,
     campaign_id: report.community.campaign_id,
     campaign_name: report.community.campaign_name,
+    is_demo: Boolean(report.seeded),
+    scam_type_label: report.overall.scam_type_label,
+    grok_action: report.recommended_action?.message || null,
   };
 }

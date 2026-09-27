@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/Card";
-import { DemoDataTag } from "@/components/ui/DemoDataTag";
+import { DemoDataTag, isDemoCampaignId } from "@/components/ui/DemoDataTag";
 import { getCampaign, getCampaignPoints } from "@/lib/api";
+import { formatEastern } from "@/lib/time";
 
 type CampaignPageProps = {
   params: Promise<{ id: string }>;
@@ -21,11 +22,10 @@ export default async function CampaignPage({ params }: CampaignPageProps) {
         <div>
           <h1 className="font-display text-3xl">{campaign.name}</h1>
           <p className="text-muted">
-            {campaign.severity} · {campaign.channels.join(", ")} · first seen{" "}
-            {new Date(campaign.first_seen).toLocaleString()}
+            {campaign.severity} · {campaign.channels.join(", ")} ·             first seen {formatEastern(campaign.first_seen)}
           </p>
         </div>
-        <DemoDataTag />
+        {isDemoCampaignId(campaign.id) ? <DemoDataTag /> : null}
       </section>
 
       <section className="col-span-12">

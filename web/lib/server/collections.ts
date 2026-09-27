@@ -2,6 +2,7 @@ import type { Db } from "mongodb";
 import type {
   Alert,
   CallReport,
+  Campaign,
   CircleHealthWeek,
   CircleMember,
   CircleRules,
@@ -64,6 +65,9 @@ export type CallAnalysisEvent = {
   requested_amount?: number | null;
   payment_method?: string | null;
   reasons?: Array<{ category: string; explanation: string; evidence: Array<{ time: string; quote: string }> }>;
+  transcript?: string;
+  duration_s?: number;
+  started_at?: string;
   created_at: string;
   received_at: string;
 };
@@ -88,5 +92,6 @@ export function collections(db: Db) {
     alerts: db.collection<Alert>("alerts"),
     verifies: db.collection<VerifyRequest & Seeded>("verifies"),
     payments: db.collection<Payment & Seeded>("payments"),
+    campaigns: db.collection<Campaign & Seeded & { from_call_id?: string }>("campaigns"),
   };
 }

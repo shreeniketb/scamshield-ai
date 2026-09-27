@@ -1,34 +1,29 @@
-import { CircleHealthChart } from "@/components/family/CircleHealthChart";
+import { ContactsCard } from "@/components/family/ContactsCard";
 import { RulesCard } from "@/components/family/RulesCard";
 import { SafeWordCard } from "@/components/family/SafeWordCard";
+import { SetupChecklist } from "@/components/family/SetupChecklist";
 import { Card } from "@/components/ui/Card";
-import { DemoDataTag } from "@/components/ui/DemoDataTag";
-import { getCircle, getCircleHealthWeeks, getSettings } from "@/lib/api";
+import { getCircle, getSettings } from "@/lib/api";
+
+function hasRealPhone(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  return digits.length >= 10 && !digits.includes("55501");
+}
 
 export default async function CirclePage() {
-  const [circle, settings, weeks] = await Promise.all([
-    getCircle(),
-    getSettings(),
-    getCircleHealthWeeks(),
-  ]);
-  const setupDone = 3;
-  const ordered = [...circle.members].sort((a, b) => a.priority - b.priority);
+  const [circle, settings] = await Promise.all([getCircle(), getSettings()]);
+  const phonesReady = settings.members.filter((member) => hasRealPhone(member.phone)).length >= 1;
+  const methodReady = Boolean(settings.rules.protection_method);
+  const items = [
+    { label: "Add family phone numbers", done: phonesReady },
+    { label: "Set family safe word", done: circle.safe_word_set },
+    { label: "Choose safe word or “Is this you?”", done: methodReady },
+  ];
 
   return (
     <div className="space-y-6">
-      <DemoDataTag />
-
       <section>
-        <h2 className="mb-2 font-display text-xl">Setup checklist</h2>
-        <Card>
-          <p className="font-medium">{setupDone}/4 ready</p>
-          <ul className="mt-2 list-disc pl-5 text-muted">
-            <li>Add emergency contacts</li>
-            <li>Set family safe word</li>
-            <li>Choose protection rules</li>
-            <li>Invite family</li>
-          </ul>
-        </Card>
+        <SetupChecklist items={items} />
       </section>
 
       <section>
@@ -37,38 +32,7 @@ export default async function CirclePage() {
           <p className="font-medium">{circle.senior.name}</p>
           <p className="text-sm text-muted">Senior · this circle is for her</p>
         </Card>
-        <ul className="space-y-2">
-          {ordered.map((member) => (
-            <li key={member.id}>
-              <Card>
-                <p className="font-medium">
-                  {member.priority}. {member.name}
-                </p>
-                <p className="text-sm text-muted">
-                  {member.relation} · {member.can_verify ? "Can verify calls" : "Does not verify calls"}
-                </p>
-                <div className="mt-2 flex gap-2">
-                  <a className="text-brand" href={`tel:${member.phone.replace(/\s/g, "")}`}>
-                    Call
-                  </a>
-                  <a className="text-brand" href={`sms:${member.phone.replace(/\s/g, "")}`}>
-                    Text
-                  </a>
-                </div>
-              </Card>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section>
-        <h2 className="mb-2 font-display text-xl">Emergency order</h2>
-        <Card>
-          <p className="text-muted">
-            If Nani is in danger and nobody answers, we alert in this order:{" "}
-            {ordered.map((member) => member.name).join(" → ")}.
-          </p>
-        </Card>
+        <ContactsCard members={settings.members} />
       </section>
 
       <section>
@@ -83,11 +47,6 @@ export default async function CirclePage() {
       <section>
         <h2 className="mb-2 font-display text-xl">Protection rules</h2>
         <RulesCard rules={settings.rules} />
-      </section>
-
-      <section>
-        <h2 className="mb-2 font-display text-xl">Circle health</h2>
-        <CircleHealthChart weeks={weeks} lastContactDays={circle.health.last_contact_days} />
       </section>
     </div>
   );

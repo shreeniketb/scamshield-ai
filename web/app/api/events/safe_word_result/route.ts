@@ -36,8 +36,8 @@ export async function POST(request: Request) {
       circle_id: circleId,
       kind: "call",
       severity: "critical",
-      title: "Caller couldn't give the family safe word",
-      body: "Nani was told to hang up. Consider calling her now.",
+      title: "Identity theft / scam — wrong safe word",
+      body: "The caller did not know the family safe word. Nani was told to hang up immediately.",
       ref_id: body.call_id,
     });
   }

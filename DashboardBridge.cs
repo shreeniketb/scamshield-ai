@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,6 +16,7 @@ namespace ScamDetector
         private static CancellationTokenSource? _verifyPollCts;
         private static int _chunk;
         private static bool _verifyTold;
+        private static bool _safeWordTold;
         private static double? _voiceScore;
 
         public static void Attach()
@@ -30,15 +32,41 @@ namespace ScamDetector
         private static void OnRecordingStarted()
         {
             _settings   = DashboardSettings.Load();
-            _chunk      = 0;
-            _verifyTold = false;
-            _voiceScore = null;
+            _chunk        = 0;
+            _verifyTold   = false;
+            _safeWordTold = false;
+            _voiceScore   = null;
             _verifyPollCts?.Cancel();
             Api.BeginCall();
             if (_settings.Enabled)
+            {
                 FamilyMessage?.Invoke($"Sending this call to {_settings.ApiRoot()} as {Api.CallId}");
+                _ = LoadFamilyContextAsync();
+            }
             else
                 FamilyMessage?.Invoke("Dashboard sending is off. Right-click the tray icon → Family dashboard settings.");
+        }
+
+        private static async Task LoadFamilyContextAsync()
+        {
+            var (circle, error) = await Api.GetCircleSettingsAsync(_settings);
+            if (error != null || circle == null)
+            {
+                if (error != null) FamilyMessage?.Invoke($"Family contacts: {error}");
+                return;
+            }
+            string? safeWord = await Api.GetSafeWordAsync(_settings);
+            FamilyDashboardContext.Update(
+                circle.Rules.ProtectionMethod,
+                safeWord,
+                circle.Members.Select(m => new FamilyDashboardContext.Contact
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    Relation = m.Relation,
+                    Phone = m.Phone,
+                    CanVerify = m.CanVerify
+                }));
         }
 
         private static void OnRecordingStopped() => _verifyPollCts?.Cancel();
@@ -52,7 +80,17 @@ namespace ScamDetector
         {
             if (!_settings.Enabled) return;
             int chunk = Interlocked.Increment(ref _chunk);
-            var (result, error) = await Api.SendVerdictAsync(_settings, verdict, chunk, null, _voiceScore);
+            var (result, error) = await Api.SendVerdictAsync(
+                _settings,
+                verdict,
+                chunk,
+                null,
+                _voiceScore,
+                MainLogic.FullTranscript(),
+                MainLogic.DurationSeconds,
+                MainLogic.SessionStartedUtc);
+
+            await MaybeReportSafeWordAsync();
             if (error != null)
             {
                 FamilyMessage?.Invoke($"Dashboard: {error}");
@@ -94,6 +132,19 @@ namespace ScamDetector
                 }
             }
             catch (TaskCanceledException) { }
+        }
+
+        private static async Task MaybeReportSafeWordAsync()
+        {
+            if (_safeWordTold) return;
+            string? result = FamilyDashboardContext.CheckSafeWord(MainLogic.FullTranscript());
+            if (result == null) return;
+            _safeWordTold = true;
+            await Api.SendSafeWordResultAsync(_settings, result);
+            if (result == "failed")
+                FamilyMessage?.Invoke("Wrong safe word. Hang up immediately — this is likely identity theft.");
+            else
+                FamilyMessage?.Invoke("Caller knew the family safe word.");
         }
     }
 }

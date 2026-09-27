@@ -137,24 +137,31 @@ export async function processEvent(
   });
 
   const actions: Action[] = [];
+  const method = circle.rules.protection_method ?? "verify_member";
 
-  if (circle.safe_word) {
+  if (method === "safe_word" && circle.safe_word) {
     const rules = circle.rules.prompt_safe_word_when;
     const matches =
       (rules.includes("unknown_caller_asks_money") && !callerIsMember && moneyAsked) ||
       (rules.includes("voice_clone_score_above_0.7") && voice > 0.7) ||
-      (rules.includes("claims_family") && Boolean(event.claimed_identity));
+      (rules.includes("claims_family") && Boolean(event.claimed_identity)) ||
+      rules.length === 0;
     if (matches) {
-      actions.push({ type: "prompt_safe_word", message: "Ask the caller for your family safe word." });
+      actions.push({
+        type: "prompt_safe_word",
+        message: "Ask the caller for your family safe word. If they cannot say it, hang up immediately.",
+      });
     }
   }
 
-  let verifyTarget: CircleMember | undefined;
-  if (claimed?.can_verify && event.risk >= 0.6) verifyTarget = claimed;
-  else if (callerIsMember?.can_verify && moneyAsked) verifyTarget = callerIsMember;
-  if (verifyTarget) {
-    const verify = await ensureVerify(db, circle, verifyTarget, event);
-    actions.push({ type: "verify_member", member_id: verifyTarget.id, verify_id: verify.id });
+  if (method === "verify_member") {
+    let verifyTarget: CircleMember | undefined;
+    if (claimed?.can_verify && event.risk >= 0.6) verifyTarget = claimed;
+    else if (callerIsMember?.can_verify && moneyAsked) verifyTarget = callerIsMember;
+    if (verifyTarget) {
+      const verify = await ensureVerify(db, circle, verifyTarget, event);
+      actions.push({ type: "verify_member", member_id: verifyTarget.id, verify_id: verify.id });
+    }
   }
 
   if (event.risk >= 0.7) {

@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { WarnCommunityButton } from "@/components/family/WarnCommunityButton";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { DemoDataTag } from "@/components/ui/DemoDataTag";
 import { getIncident } from "@/lib/api";
+import { formatDuration, formatEastern } from "@/lib/time";
 
 type IncidentPageProps = {
   params: Promise<{ incidentId: string }>;
@@ -17,23 +19,37 @@ export default async function IncidentPage({ params }: IncidentPageProps) {
   }
 
   const cueGroups = ["voice", "words", "caller", "money"] as const;
+  const grokReasons = incident.report.evidence.filter((item) => item.text);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <DemoDataTag />
-      </div>
+      {incident.is_demo ? (
+        <div className="flex items-center justify-between">
+          <DemoDataTag />
+        </div>
+      ) : null}
 
       <section>
         <h2 className="font-display text-2xl">{incident.outcome_label}</h2>
         <Badge tone={incident.risk_score >= 0.7 ? "critical" : incident.risk_score >= 0.4 ? "attention" : "safe"}>
           Risk {(incident.risk_score * 100).toFixed(0)}%
         </Badge>
+        {incident.scam_type_label ? <p className="mt-2 font-medium">Scam type: {incident.scam_type_label}</p> : null}
         <p className="mt-2 text-muted">
-          {new Date(incident.started_at).toLocaleString()} · {incident.duration_s}s · {incident.caller_number}
+          {formatEastern(incident.started_at)} · {formatDuration(incident.duration_s)}
+          {incident.caller_number ? ` · ${incident.caller_number}` : ""}
         </p>
         <p className="mt-3">{incident.family_summary}</p>
       </section>
+
+      {incident.grok_action ? (
+        <section>
+          <h2 className="mb-2 font-display text-xl">What Grok told Nani</h2>
+          <Card>
+            <p>{incident.grok_action}</p>
+          </Card>
+        </section>
+      ) : null}
 
       <section>
         <h2 className="mb-2 font-display text-xl">Story timeline</h2>
@@ -47,15 +63,21 @@ export default async function IncidentPage({ params }: IncidentPageProps) {
         </ol>
       </section>
 
-      <section>
-        <h2 className="mb-2 font-display text-xl">Risk over the call</h2>
-        <Card>
-          <p className="text-muted">
-            Chart in a later phase: voice synthetic vs overall risk, warning line at 0.7.
-          </p>
-          <p className="mt-2 text-sm text-muted">{incident.timeline.length} labelled moments ready.</p>
-        </Card>
-      </section>
+      {grokReasons.length ? (
+        <section>
+          <h2 className="mb-2 font-display text-xl">Grok flags</h2>
+          <ul className="space-y-2">
+            {grokReasons.map((item) => (
+              <li key={`${item.start}-${item.text}`}>
+                <Card>
+                  <p className="text-sm text-muted">{item.type}</p>
+                  <p>“{item.text}”</p>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section>
         <h2 className="mb-2 font-display text-xl">What ScamShield noticed</h2>
@@ -77,49 +99,35 @@ export default async function IncidentPage({ params }: IncidentPageProps) {
         })}
       </section>
 
-      {incident.detectors.length ? (
-        <section>
-          <h2 className="mb-2 font-display text-xl">How we knew</h2>
+      <section>
+        <h2 className="mb-2 font-display text-xl">Transcript</h2>
+        <p className="mb-2 text-sm text-muted">From Kale’s app (AssemblyAI), not guessed by Grok</p>
+        {incident.transcript.length === 0 ? (
+          <Card>
+            <p className="text-muted">No transcript lines on this report yet. The next desktop send will include the full call so far.</p>
+          </Card>
+        ) : (
           <ul className="space-y-2">
-            {incident.detectors.map((detector) => (
-              <li key={detector.name}>
+            {incident.transcript.map((line) => (
+              <li key={`${line.start}-${line.text}`}>
                 <Card>
-                  <p className="font-medium">{detector.name}</p>
-                  <p className="text-sm text-muted">{detector.finding}</p>
+                  <p className="text-sm capitalize text-muted">{line.speaker}</p>
+                  <p>{line.text}</p>
                 </Card>
               </li>
             ))}
           </ul>
-        </section>
-      ) : null}
-
-      <section>
-        <h2 className="mb-2 font-display text-xl">Transcript excerpts</h2>
-        <p className="mb-2 text-sm text-muted">Transcribed automatically</p>
-        <ul className="space-y-2">
-          {incident.transcript.slice(0, 5).map((line) => (
-            <li key={`${line.start}-${line.text}`}>
-              <Card>
-                <p className="text-sm capitalize text-muted">{line.speaker}</p>
-                <p>{line.text}</p>
-              </Card>
-            </li>
-          ))}
-        </ul>
+        )}
       </section>
 
       <section>
-        <h2 className="mb-2 font-display text-xl">Actions</h2>
-        <div className="flex flex-col gap-2">
-          {incident.campaign_id ? (
-            <Link className="inline-flex min-h-12 items-center text-brand" href={`/community/campaign/${incident.campaign_id}`}>
-              Report to Community · {incident.campaign_name}
-            </Link>
-          ) : null}
-          <a className="inline-flex min-h-12 items-center text-brand" href="tel:+14045550100">
-            Call Nani
-          </a>
-        </div>
+        <h2 className="mb-2 font-display text-xl">Community</h2>
+        <WarnCommunityButton callId={incident.id} />
+        {incident.campaign_id ? (
+          <Link className="mt-2 inline-flex min-h-12 items-center text-brand" href={`/community/campaign/${incident.campaign_id}`}>
+            Open campaign
+          </Link>
+        ) : null}
       </section>
     </div>
   );

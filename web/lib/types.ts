@@ -19,7 +19,10 @@ export type CircleMember = {
   can_verify: boolean;
 };
 
+export type ProtectionMethod = "safe_word" | "verify_member";
+
 export type CircleRules = {
+  protection_method?: ProtectionMethod;
   prompt_safe_word_when: string[];
   verify_timeout_s: number;
   hold_payments_after_flag_min: number;
@@ -223,6 +226,7 @@ export type CallReport = {
   };
   report_summary: string;
   family_summary: string;
+  seeded?: boolean;
 };
 
 export type CueChip = {
@@ -256,6 +260,9 @@ export type Incident = {
   evidence: Evidence[];
   campaign_id: string | null;
   campaign_name: string | null;
+  is_demo?: boolean;
+  scam_type_label?: string | null;
+  grok_action?: string | null;
 };
 
 export type Campaign = {

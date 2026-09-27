@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
-import { DemoDataTag } from "@/components/ui/DemoDataTag";
+import { DemoDataTag, DemoMark, isDemoCampaignId } from "@/components/ui/DemoDataTag";
 import { getCampaigns, getWarningNetwork } from "@/lib/api";
 
 export default async function FamilyCommunityPage() {
@@ -10,7 +10,7 @@ export default async function FamilyCommunityPage() {
 
   return (
     <div className="space-y-6">
-      <DemoDataTag />
+      {campaigns.some((campaign) => isDemoCampaignId(campaign.id)) ? <DemoDataTag /> : null}
 
       <section>
         <h2 className="mb-2 font-display text-xl">Nani&apos;s area</h2>
@@ -27,7 +27,10 @@ export default async function FamilyCommunityPage() {
             <li key={campaign.id}>
               <Link href={`/community/campaign/${campaign.id}`}>
                 <Card>
-                  <p className="font-medium">{campaign.name}</p>
+                  <p className="font-medium">
+                    {campaign.name}
+                    {isDemoCampaignId(campaign.id) ? <DemoMark /> : null}
+                  </p>
                   <p className="text-sm text-muted">{campaign.how_to_spot}</p>
                 </Card>
               </Link>

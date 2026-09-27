@@ -1,8 +1,7 @@
 import type { Db } from "mongodb";
 import { getDb } from "../db";
 import { circleHealthWeeks } from "../mock/community";
-import { seedReports } from "../mock/reports";
-import { seedCircle, seedPayments, seedSettings, seedVerifies } from "../mock/seed";
+import { seedCircle, seedSettings } from "../mock/seed";
 import { collections, type CircleDoc } from "./collections";
 
 export const CIRCLE_ID = "circle_nani";
@@ -25,33 +24,50 @@ function defaultCircle(): CircleDoc {
   };
 }
 
-// The 8 demo incidents and their linked payment/verify stay as history, marked
-// seeded so live statistics can tell them apart from real desktop-app events.
-async function insertHistory(db: Db) {
-  const { reports, payments, verifies } = collections(db);
-  await reports.bulkWrite(
-    seedReports.map((report) => ({
-      replaceOne: {
-        filter: { call_id: report.call_id },
-        replacement: { ...report, seeded: true },
-        upsert: true,
-      },
-    })),
-  );
-  await payments.bulkWrite(
-    seedPayments.map((payment) => ({
-      replaceOne: {
-        filter: { id: payment.id },
-        replacement: { ...payment, status: "declined" as const, decided_by: "u_priya", seeded: true },
-        upsert: true,
-      },
-    })),
-  );
-  await verifies.bulkWrite(
-    seedVerifies.map((verify) => ({
-      replaceOne: { filter: { id: verify.id }, replacement: { ...verify, seeded: true }, upsert: true },
-    })),
-  );
+const DUMMY_IDS = [
+  "call_20260925_001",
+  "msg_georgia_power_001",
+  "call_priya_normal_001",
+  "call_medicare_001",
+  "msg_bank_fraud_001",
+  "msg_peach_pass_001",
+  "msg_delivery_001",
+  "call_cousin_safe_word_001",
+  "pay_001",
+  "ver_001",
+];
+
+async function clearSeededHistory(db: Db) {
+  const { reports, payments, verifies, events, alerts } = collections(db);
+  await Promise.all([
+    reports.deleteMany({ $or: [{ seeded: true }, { call_id: { $in: DUMMY_IDS } }] }),
+    payments.deleteMany({ $or: [{ seeded: true }, { id: { $in: DUMMY_IDS } }] }),
+    verifies.deleteMany({ $or: [{ seeded: true }, { id: { $in: DUMMY_IDS } }] }),
+    events.deleteMany({ $or: [{ id: { $in: DUMMY_IDS } }, { id: { $regex: "^call_(demo|live_test)_" } }] }),
+    alerts.deleteMany({ ref_id: { $in: DUMMY_IDS } }),
+  ]);
+
+  const live = await events.find({ type: "call_analysis" }).sort({ received_at: -1 }).toArray();
+  const keep = new Set<string>();
+  for (const event of live) {
+    if ("id" in event && keep.size < 12) keep.add(event.id);
+  }
+  if (keep.size > 0) {
+    await events.deleteMany({ type: "call_analysis", id: { $nin: [...keep] } });
+  }
+}
+
+async function syncMemberNames(db: Db) {
+  const circle = await collections(db).circles.findOne({ id: CIRCLE_ID });
+  if (!circle) return;
+  const renamed = circle.members.map((member) => {
+    if (member.id === "u_aarav") return { ...member, name: "Kale", relation: "grandson" };
+    if (member.id === "u_priya") return { ...member, name: "Vanessa", relation: "daughter" };
+    if (member.id === "u_raj") return { ...member, name: "Shreeniket", relation: "close friend" };
+    return member;
+  });
+  const rules = { ...circle.rules, protection_method: circle.rules.protection_method ?? "verify_member" };
+  await collections(db).circles.updateOne({ id: CIRCLE_ID }, { $set: { members: renamed, rules } });
 }
 
 export async function resetDemo(db: Db) {
@@ -64,7 +80,6 @@ export async function resetDemo(db: Db) {
     c.reports.deleteMany({}),
   ]);
   await c.circles.replaceOne({ id: CIRCLE_ID }, defaultCircle(), { upsert: true });
-  await insertHistory(db);
 }
 
 let seededThisProcess = false;
@@ -76,6 +91,10 @@ export async function getSeededDb(): Promise<Db> {
   if (seededThisProcess) return db;
   const existing = await collections(db).circles.findOne({ id: CIRCLE_ID });
   if (!existing) await resetDemo(db);
+  else {
+    await syncMemberNames(db);
+    await clearSeededHistory(db);
+  }
   seededThisProcess = true;
   return db;
 }
