@@ -119,3 +119,5 @@ C:\Users\kales\VSCode Projects\scamshield main\scamshield-ai\obj\Debug\net8.0-wi
 C:\Users\kales\VSCode Projects\scamshield main\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.pdb
 C:\Users\kales\VSCode Projects\scamshield main\scamshield-ai\obj\Debug\net8.0-windows\ScamDetector.genruntimeconfig.cache
 C:\Users\kales\VSCode Projects\scamshield main\scamshield-ai\obj\Debug\net8.0-windows\ref\ScamDetector.dll
+c:\Users\kales\VSCode Projects\scamshield main\scamshield-ai\obj\Debug\net8.0-windows\DashboardSettingsWindow.baml
+c:\Users\kales\VSCode Projects\scamshield main\scamshield-ai\obj\Debug\net8.0-windows\DashboardSettingsWindow.g.cs

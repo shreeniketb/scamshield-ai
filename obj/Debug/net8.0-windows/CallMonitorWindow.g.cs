@@ -180,7 +180,7 @@ namespace ScamDetector {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/ScamDetector;component/callmonitorwindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/ScamDetector;V1.0.0.0;component/callmonitorwindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\CallMonitorWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
