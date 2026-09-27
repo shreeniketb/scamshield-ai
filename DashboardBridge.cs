@@ -35,6 +35,10 @@ namespace ScamDetector
             _voiceScore = null;
             _verifyPollCts?.Cancel();
             Api.BeginCall();
+            if (_settings.Enabled)
+                FamilyMessage?.Invoke($"Sending this call to {_settings.ApiRoot()} as {Api.CallId}");
+            else
+                FamilyMessage?.Invoke("Dashboard sending is off. Right-click the tray icon → Family dashboard settings.");
         }
 
         private static void OnRecordingStopped() => _verifyPollCts?.Cancel();

@@ -72,6 +72,7 @@ namespace ScamDetector
         {
             var menu = new ContextMenuStrip();
             menu.Items.Add("Open ScamShield", null, (_, _) => OpenMonitor());
+            menu.Items.Add("Family dashboard settings", null, (_, _) => OpenDashboardSettings());
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Quit", null, (_, _) =>
             {
@@ -80,6 +81,15 @@ namespace ScamDetector
                 Shutdown();
             });
             return menu;
+        }
+
+        private void OpenDashboardSettings()
+        {
+            Current.Dispatcher.Invoke(() =>
+            {
+                var win = new DashboardSettingsWindow();
+                win.ShowDialog();
+            });
         }
 
         public void OpenMonitor()
