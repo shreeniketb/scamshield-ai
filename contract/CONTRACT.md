@@ -39,7 +39,7 @@ GET/PUT /api/circle/{id}/settings → {"circle_id","members":[{"id","name","rela
 PUT /api/circle/{id}/safe-word body {"safe_word":"..."} → {"ok":true,"safe_word_set":true}
 GET /api/circle/{id}/safe-word-check-material (header X-Device-Token must equal env DEVICE_TOKEN, else 401) → {"safe_word":"..."}
 POST /api/events/safe_word_result body {"call_id":"call_001","result":"passed"|"failed"|"not_asked"} → failed = critical alert.
-Community (read from JSON files in web/data/)
+Community (demo baseline plus live reports — see Additions below)
 GET /api/community/summary → {"active_campaigns_24h":7,"circles_warned_before_exposure":38,"payments_held":12,"dollars_protected":8400,"voice_clones_caught":5,"data_label":"Demo data"}
 GET /api/community/campaigns → [{"id","name","channels":["sms","call","voice"],"reports_24h":14,"trend":[24 hourly numbers], "first_seen","areas":["30318"],"example_redacted":"... [link] ...","how_to_spot":"...","severity":"info|warning|critical"}]
 GET /api/community/campaigns/{id}/points → {"campaign_id","points":[{"x","y","variant":0,"text_redacted","first_seen"}]}
@@ -48,3 +48,14 @@ GET /api/community/states → [{"state":"FL","losses_usd":0,"complaints":0}]
 Demo
 POST /api/demo/reset → clears events, alerts, verifies, payments; re-seeds circle_nani with default members and rules, no safe word.
 Seeding also happens automatically on the first request if the circle doesn't exist.
+Reset and seeding keep the 8 demo incidents (with pay_001 declined by Priya and ver_001 denied) as history; live call reports from the desktop app are cleared.
+
+Additions (Phase 8 — additive only, nothing above changed)
+
+Optional extra fields the desktop app MAY send on POST /api/events/call_analysis: "scam_type" (e.g. "family_impersonation", "bank_impersonation", "utility_shutoff", "medicare", "toll", "delivery", "irs_refund", "government_impersonation", "tech_support"), "explanation" (one plain sentence for the family), "recommended_action" (what Nani was told). script_cues may also use Grok's reason categories (urgency_or_pressure, secrecy_or_isolation, unusual_payment_method, impersonation, threats, sensitive_information_request, too_good_to_be_true, unexpected_debt_or_problem).
+Repeated chunks for the same call id return the same verify_member verify_id (one "Is this you?" per call); poll GET /api/verify/{id} for the answer. Alerts: one per call/message id, updated (and resurfaced) when severity rises.
+GET /api/reports?circle_id=circle_nani → CallReport[] newest first: every stored call_report, plus entries built live from call_analysis / message_check events that have no call_report yet (status "in_progress" while chunks keep arriving).
+GET /api/circle/{id}/health-weeks → [{"week_label":"W1","calls":1}, ...8 weeks]
+GET /api/community/scam-types → [{"type":"Bank impersonation","reports":18}] sorted by reports.
+GET /api/community/campaigns/{id}/network → {"campaign_id","insight","nodes":[{"id","ring":0|1|2,"status":"first|warned|before|after|outside","label"}],"edges":[{"from","to"}]}
+Community figures = demo baseline (web/lib/mock/community.ts, labelled "Demo data") + live desktop reports added on top (summary, campaign reports_24h, map ZIP of the circle, scam types).

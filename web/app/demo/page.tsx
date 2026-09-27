@@ -4,14 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { triggerVoiceCloneVerify } from "@/lib/api";
+import { isMockMode, triggerVoiceCloneVerify } from "@/lib/api";
 
 export default function DemoPage() {
   const [log, setLog] = useState<string[]>([]);
 
-  function trigger() {
+  async function trigger() {
     try {
-      const verify = triggerVoiceCloneVerify();
+      const verify = await triggerVoiceCloneVerify();
       setLog((prev) => [
         `${new Date().toLocaleTimeString()} · verify ${verify.id} sent to Aarav`,
         ...prev,
@@ -27,7 +27,7 @@ export default function DemoPage() {
         <Link href="/" className="text-brand">
           ScamShield
         </Link>{" "}
-        · Demo control room · mock mode
+        · Demo control room · {isMockMode() ? "mock mode" : "live API"}
       </p>
       <h1 className="font-display text-3xl">Demo</h1>
       <p className="text-muted">
@@ -43,7 +43,7 @@ export default function DemoPage() {
         </Card>
         <Card className="md:col-span-3">
           <h2 className="font-display text-xl">Scenario</h2>
-          <Button className="mt-4" onClick={trigger}>
+          <Button className="mt-4" onClick={() => void trigger()}>
             2 · Voice-clone grandson call
           </Button>
           <h3 className="mt-6 font-display text-lg">Event log</h3>

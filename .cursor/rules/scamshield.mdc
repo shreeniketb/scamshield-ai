@@ -24,7 +24,7 @@ Build work follows docs/BUILD_PLAN.md — execute only the phase I ask for, then
 Stack (don't change without asking)
 Next.js (App Router) + TypeScript + Tailwind CSS, in the folder web/.
 Server = Next.js API routes in web/app/api/**/route.ts. Deployed on Vercel.
-Database: MongoDB Atlas via the official mongodb driver, with a cached client in web/lib/db.ts. Database name "kin".
+Database: MongoDB Atlas via the official mongodb driver, with a cached client in web/lib/db.ts. Database name comes from MONGODB_DB (currently "scamshield"; code defaults to "kin").
 Charts: Recharts. Map: maplibre-gl with style https://tiles.openfreemap.org/styles/liberty (client-only component).
 Icons: lucide-react. Fonts: next/font/google (Fraunces + Inter).
 All data shapes and endpoints MUST follow contract/CONTRACT.md exactly. Kale's desktop app depends on it.

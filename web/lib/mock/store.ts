@@ -1,7 +1,7 @@
 import type { MockStoreData } from "./seed";
 import { createSeedStore } from "./seed";
 import { publishBus } from "./bus";
-import type { VerifyRequest } from "../types";
+import type { CircleSettings, Payment, VerifyRequest } from "../types";
 
 const STORAGE_KEY = "scamshield-mock-v1";
 
@@ -71,6 +71,30 @@ export function expireOldVerifies(now = Date.now()) {
     return { ...item, status: "expired" as const };
   });
   if (changed) save();
+}
+
+export function updatePayment(id: string, changes: Partial<Payment>): Payment | null {
+  let updated: Payment | null = null;
+  memory.payments = memory.payments.map((item) => {
+    if (item.id !== id) return item;
+    updated = { ...item, ...changes };
+    return updated;
+  });
+  save();
+  publishBus({ type: "store_updated" });
+  return updated;
+}
+
+export function updateSettings(changes: Partial<CircleSettings>): CircleSettings {
+  memory.settings = { ...memory.settings, ...changes };
+  memory.circle = {
+    ...memory.circle,
+    members: memory.settings.members,
+    safe_word_set: memory.settings.safe_word_set,
+  };
+  save();
+  publishBus({ type: "store_updated" });
+  return memory.settings;
 }
 
 export function resetStore() {
