@@ -300,7 +300,7 @@ export type StateStat = {
   state: string;
   losses_usd: number;
   complaints: number;
-  placeholder: true;
+  placeholder?: boolean;
 };
 
 export type WarningNode = {

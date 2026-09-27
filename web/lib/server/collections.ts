@@ -7,6 +7,7 @@ import type {
   CircleMember,
   CircleRules,
   Payment,
+  StateStat,
   VerifyRequest,
 } from "../types";
 
@@ -70,6 +71,8 @@ export type CallAnalysisEvent = {
   started_at?: string;
   created_at: string;
   received_at: string;
+  // Desktop sends this when Nani taps Stop Recording (she recognized the caller).
+  manual_stop?: boolean;
 };
 
 export type SafeWordEvent = {
@@ -84,6 +87,11 @@ export type EventDoc = MessageCheckEvent | CallAnalysisEvent | SafeWordEvent;
 
 type Seeded = { seeded?: boolean };
 
+export type CommunityStateDoc = StateStat & {
+  source: string;
+  year: number;
+};
+
 export function collections(db: Db) {
   return {
     circles: db.collection<CircleDoc>("circles"),
@@ -93,5 +101,6 @@ export function collections(db: Db) {
     verifies: db.collection<VerifyRequest & Seeded>("verifies"),
     payments: db.collection<Payment & Seeded>("payments"),
     campaigns: db.collection<Campaign & Seeded & { from_call_id?: string }>("campaigns"),
+    community_states: db.collection<CommunityStateDoc>("community_states"),
   };
 }

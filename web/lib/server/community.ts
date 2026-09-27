@@ -5,10 +5,10 @@ import {
   communitySummary as baseSummary,
   scamTypeTotals as baseScamTypes,
 } from "../mock/community";
-import type { CallReport, Campaign, CommunitySummary, MapZip, ScamTypeTotal } from "../types";
+import type { CallReport, Campaign, CommunitySummary, MapZip, ScamTypeTotal, StateStat } from "../types";
 import { collections, type CircleDoc } from "./collections";
 import { listReports } from "./reports";
-import { CIRCLE_ID } from "./seed";
+import { CIRCLE_ID, seedIc3States } from "./seed";
 import { scamTypeInfo } from "./scamTypes";
 
 // Community Watch = the demo baseline (labelled "Demo data") plus every real
@@ -62,6 +62,7 @@ export async function createCampaignFromCall(db: Db, callId: string): Promise<Ca
   if (!circle) return null;
   const report = (await listReports(db, circle as CircleDoc)).find((item) => item.call_id === callId);
   if (!report) return null;
+  if (report.overall.risk_score < 0.6) return null;
 
   const existing = await collections(db).campaigns.findOne({ from_call_id: callId });
   if (existing) {
@@ -127,4 +128,13 @@ export async function getScamTypes(db: Db): Promise<ScamTypeTotal[]> {
   return [...totals.entries()]
     .map(([type, reports]) => ({ type, reports }))
     .sort((a, b) => b.reports - a.reports);
+}
+
+export async function getStates(db: Db): Promise<StateStat[]> {
+  await seedIc3States(db);
+  const rows = await collections(db)
+    .community_states.find({}, { projection: { _id: 0, source: 0, year: 0 } })
+    .sort({ losses_usd: -1 })
+    .toArray();
+  return rows.map(({ state, losses_usd, complaints }) => ({ state, losses_usd, complaints }));
 }

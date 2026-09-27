@@ -1,4 +1,5 @@
 import type { Db } from "mongodb";
+import { ic3ElderFraud2025, IC3_STATES_SOURCE, IC3_STATES_YEAR } from "../data/ic3ElderFraud2025";
 import { getDb } from "../db";
 import { circleHealthWeeks } from "../mock/community";
 import { seedCircle, seedSettings } from "../mock/seed";
@@ -82,6 +83,22 @@ export async function resetDemo(db: Db) {
   await c.circles.replaceOne({ id: CIRCLE_ID }, defaultCircle(), { upsert: true });
 }
 
+export async function seedIc3States(db: Db) {
+  const col = collections(db).community_states;
+  const ready = await col.countDocuments({ source: IC3_STATES_SOURCE });
+  if (ready === ic3ElderFraud2025.length) return;
+  await col.deleteMany({});
+  await col.insertMany(
+    ic3ElderFraud2025.map(({ state, losses_usd, complaints }) => ({
+      state,
+      losses_usd,
+      complaints,
+      source: IC3_STATES_SOURCE,
+      year: IC3_STATES_YEAR,
+    })),
+  );
+}
+
 let seededThisProcess = false;
 
 // Every API route calls this instead of getDb(), so the demo circle exists on
@@ -95,6 +112,7 @@ export async function getSeededDb(): Promise<Db> {
     await syncMemberNames(db);
     await clearSeededHistory(db);
   }
+  await seedIc3States(db);
   seededThisProcess = true;
   return db;
 }

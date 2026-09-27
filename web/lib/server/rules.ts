@@ -119,6 +119,38 @@ export async function processEvent(
   await collections(db).events.insertOne({ ...event });
 
   const isCall = event.type === "call_analysis";
+  if (isCall && event.manual_stop) {
+    const { verifies, alerts } = collections(db);
+    await verifies.updateMany(
+      { source_event_id: event.id, status: "pending" },
+      { $set: { status: "confirmed", responded_at: nowIso() } },
+    );
+    const existing = await alerts.findOne({ ref_id: event.id, kind: "call" });
+    if (existing) {
+      await alerts.updateOne(
+        { id: existing.id },
+        {
+          $set: {
+            severity: "info",
+            title: "Call stopped — caller recognized",
+            body: "Recording was stopped manually — the listener recognized the caller. This was not counted as a scam.",
+            seen: true,
+          },
+        },
+      );
+    } else {
+      await upsertEventAlert(db, {
+        circle_id: circle.id,
+        kind: "call",
+        severity: "info",
+        title: "Call stopped — caller recognized",
+        body: "Recording was stopped manually — the listener recognized the caller. This was not counted as a scam.",
+        ref_id: event.id,
+      });
+    }
+    return [];
+  }
+
   const cues = isCall ? event.script_cues ?? [] : event.red_flags ?? [];
   const text = isCall ? event.transcript_snippet ?? "" : event.text ?? "";
   const from = isCall ? event.caller : event.sender;

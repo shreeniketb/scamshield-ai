@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/Card";
 import { DemoDataTag } from "@/components/ui/DemoDataTag";
 import { StatTile } from "@/components/ui/StatTile";
 import { getCampaigns, getCommunitySummary, getMap, getScamTypes, getStates } from "@/lib/api";
+import { formatUsdCompact, ic3StateName } from "@/lib/data/ic3ElderFraud2025";
 
 export default async function CommunityPage() {
   const [summary, campaigns, map, scamTypes, states] = await Promise.all([
@@ -12,6 +13,9 @@ export default async function CommunityPage() {
     getScamTypes(),
     getStates(),
   ]);
+  const ranked = [...states].sort((a, b) => b.losses_usd - a.losses_usd);
+  const top10 = ranked.slice(0, 10);
+  const georgia = ranked.find((row) => row.state === "GA");
 
   return (
     <>
@@ -97,17 +101,73 @@ export default async function CommunityPage() {
       </section>
 
       <section className="col-span-12">
-        <h2 className="mb-3 font-display text-xl">National context</h2>
+        <h2 className="mb-3 font-display text-xl">
+          Five states account for nearly half of reported elder-fraud losses
+        </h2>
         <Card>
           <p className="text-muted">
-            FBI IC3 2025 Elder Fraud Report. Placeholder figures for {states.length} states until Raj
-            provides the real numbers.
+            Georgia ranks 8th — {formatUsdCompact(georgia?.losses_usd ?? 0)} reported by people 60+.
+          </p>
+          {top10.length === 0 ? (
+            <p className="mt-4 text-muted">National figures could not be loaded.</p>
+          ) : (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[28rem] text-left text-sm">
+                <caption className="sr-only">
+                  Top 10 US states by FBI IC3 2025 elder-fraud losses among people age 60 and older
+                </caption>
+                <thead>
+                  <tr className="border-b border-line text-muted">
+                    <th className="py-2 pr-3 font-medium" scope="col">
+                      Rank
+                    </th>
+                    <th className="py-2 pr-3 font-medium" scope="col">
+                      State
+                    </th>
+                    <th className="py-2 pr-3 text-right font-medium" scope="col">
+                      Losses
+                    </th>
+                    <th className="py-2 text-right font-medium" scope="col">
+                      Complaints
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {top10.map((row, index) => {
+                    const isGeorgia = row.state === "GA";
+                    return (
+                      <tr
+                        key={row.state}
+                        className={`border-b border-line last:border-0 ${isGeorgia ? "bg-brand-soft" : ""}`}
+                      >
+                        <td className="py-2 pr-3 tabular-nums text-muted">{index + 1}</td>
+                        <td className="py-2 pr-3 font-medium">
+                          {ic3StateName[row.state] ?? row.state}
+                          {isGeorgia ? " · Nani's state" : ""}
+                        </td>
+                        <td className="py-2 pr-3 text-right tabular-nums">
+                          {formatUsdCompact(row.losses_usd)}
+                        </td>
+                        <td className="py-2 text-right tabular-nums">
+                          {row.complaints.toLocaleString("en-US")}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p className="mt-3 text-sm text-muted">
+            Source: FBI IC3 2025 Elder Fraud Report (age 60+). {states.length} states loaded.
           </p>
         </Card>
       </section>
 
       <footer className="col-span-12 text-sm text-muted">
-        Demo data. No names, numbers or links are ever shown. Areas appear only after 5+ reports.
+        Atlanta campaigns and the ZIP map are ScamShield demo data plus live reports. The national
+        table is FBI IC3 2025 elder fraud. No names, numbers or links are ever shown. Areas appear
+        only after 5+ reports.
       </footer>
     </>
   );

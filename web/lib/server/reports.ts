@@ -116,7 +116,9 @@ export function reportFromCallChunks(chunks: CallAnalysisEvent[], ctx: Context):
   const last = sorted[sorted.length - 1];
   const startedAt = first.created_at;
   const live = Date.now() - Date.parse(last.received_at) < LIVE_WINDOW_MS;
-  const risk = Math.max(...sorted.map((chunk) => chunk.risk));
+  const stoppedManually = sorted.some((chunk) => chunk.manual_stop);
+  const grokLast = [...sorted].reverse().find((chunk) => !chunk.manual_stop) ?? last;
+  const risk = stoppedManually ? 0.1 : Math.max(...sorted.map((chunk) => chunk.risk));
   const voiceScores = sorted
     .map((chunk) => chunk.voice_synthetic_score)
     .filter((score): score is number => typeof score === "number");
@@ -125,7 +127,7 @@ export function reportFromCallChunks(chunks: CallAnalysisEvent[], ctx: Context):
     (member) => member.relation.toLowerCase() === claimedIdentity?.toLowerCase(),
   );
   // The contract's call_analysis has no scam_type; a caller posing as family is the grandparent scam.
-  const scamType = last.scam_type ?? (claimedMember ? "family_impersonation" : undefined);
+  const scamType = grokLast.scam_type ?? last.scam_type ?? (claimedMember ? "family_impersonation" : undefined);
   const scam = scamTypeInfo(scamType);
   const callerMember = ctx.circle.members.find(
     (member) => phoneKey(member.phone) === phoneKey(first.caller),
@@ -228,7 +230,9 @@ export function reportFromCallChunks(chunks: CallAnalysisEvent[], ctx: Context):
       scam_type: scamType ?? "unknown",
       scam_type_label: scam.label,
       scam_type_confidence: risk,
-      ...outcomeFor(risk, live, ctx, true, claimedMember?.name ?? null),
+      ...(stoppedManually
+        ? { outcome: "verified", outcome_label: "Call stopped · caller recognized" }
+        : outcomeFor(risk, live, ctx, true, claimedMember?.name ?? null)),
     },
     audio_forensics:
       topVoice === null
@@ -237,7 +241,7 @@ export function reportFromCallChunks(chunks: CallAnalysisEvent[], ctx: Context):
             synthetic_probability: topVoice,
             classification: topVoice > 0.7 ? "likely_synthetic" : "likely_human",
             model_confidence: topVoice,
-            manipulation_type: last.manipulation_type ?? "unknown",
+            manipulation_type: grokLast.manipulation_type ?? last.manipulation_type ?? "unknown",
             detectors: [],
           },
     transcript,
@@ -246,8 +250,10 @@ export function reportFromCallChunks(chunks: CallAnalysisEvent[], ctx: Context):
     entities: {
       claimed_identity: claimedIdentity,
       claimed_member_id: claimedMember?.id ?? null,
-      claimed_organization: last.claimed_organization ?? null,
-      requested_amount: sorted.map((chunk) => chunk.requested_amount).find((n) => n != null) ?? null,
+      claimed_organization: grokLast.claimed_organization ?? last.claimed_organization ?? null,
+      requested_amount: stoppedManually
+        ? null
+        : sorted.map((chunk) => chunk.requested_amount).find((n) => n != null) ?? null,
       currency: "USD",
       payment_method:
         sorted.map((chunk) => chunk.payment_method).find(Boolean) ??
@@ -259,20 +265,35 @@ export function reportFromCallChunks(chunks: CallAnalysisEvent[], ctx: Context):
     timeline,
     protection: protectionFor(startedAt, ctx),
     community: {
-      reported: risk >= 0.6,
+      reported: !stoppedManually && risk >= 0.6,
       campaign_id: scam.campaign_id,
       campaign_name: null,
       similar_reports_24h: 0,
     },
     recommended_action: {
       severity: risk >= 0.7 ? "urgent" : risk >= 0.4 ? "caution" : "info",
-      message: last.recommended_action ?? "",
+      message: grokLast.recommended_action ?? last.recommended_action ?? "",
     },
-    report_summary: last.explanation ?? "",
-    family_summary:
-      last.explanation ??
-      `ScamShield checked a WhatsApp call to ${ctx.circle.senior.name} (risk ${Math.round(risk * 100)}%).`,
+    report_summary: grokLast.explanation ?? last.explanation ?? "",
+    family_summary: familySummaryFor(grokLast.explanation ?? last.explanation, stoppedManually, ctx, risk),
   };
+}
+
+const MANUAL_STOP_NOTE =
+  "Recording was stopped manually — the listener recognized the caller.";
+
+function familySummaryFor(
+  grokText: string | undefined,
+  stoppedManually: boolean,
+  ctx: Context,
+  risk: number,
+) {
+  const base =
+    grokText ||
+    `ScamShield checked a WhatsApp call to ${ctx.circle.senior.name} (risk ${Math.round(risk * 100)}%).`;
+  if (!stoppedManually) return base;
+  if (base.includes(MANUAL_STOP_NOTE)) return base;
+  return `${base} ${MANUAL_STOP_NOTE}`;
 }
 
 export function reportFromMessage(event: MessageCheckEvent, ctx: Context): CallReport {

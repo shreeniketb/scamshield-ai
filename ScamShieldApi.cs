@@ -122,10 +122,19 @@ namespace ScamDetector
             double? voiceScore,
             string? transcript = null,
             int? durationSeconds = null,
-            DateTime? startedAtUtc = null)
+            DateTime? startedAtUtc = null,
+            bool knownCaller = false)
         {
             if (!settings.Enabled) return (null, "Dashboard sending is turned off.");
             if (string.IsNullOrEmpty(CallId)) BeginCall();
+
+            string explanation = verdict.Summary ?? "";
+            if (knownCaller)
+            {
+                const string note = "Recording was stopped manually — the listener recognized the caller.";
+                if (!explanation.Contains(note, StringComparison.Ordinal))
+                    explanation = string.IsNullOrWhiteSpace(explanation) ? note : explanation.Trim() + " " + note;
+            }
 
             var body = new Dictionary<string, object?>
             {
@@ -140,18 +149,19 @@ namespace ScamDetector
                 ["started_at"]            = (startedAtUtc ?? DateTime.UtcNow).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"),
                 ["duration_s"]            = Math.Max(0, durationSeconds ?? 0),
                 ["transcript"]            = transcript ?? "",
-                ["risk"]                  = Math.Clamp(verdict.ScamLikelihood, 0, 100) / 100.0,
+                ["risk"]                  = knownCaller ? 0.1 : Math.Clamp(verdict.ScamLikelihood, 0, 100) / 100.0,
                 ["voice_synthetic_score"] = voiceScore,
                 ["scam_type"]             = Blank(verdict.ScamType),
                 ["claimed_identity"]      = Blank(verdict.ClaimedIdentity),
                 ["claimed_organization"]  = Blank(verdict.ClaimedOrganization),
-                ["requested_amount"]      = verdict.RequestedAmount > 0 ? verdict.RequestedAmount : null,
+                ["requested_amount"]      = knownCaller || verdict.RequestedAmount <= 0 ? null : verdict.RequestedAmount,
                 ["payment_method"]        = Blank(verdict.PaymentMethod),
                 ["script_cues"]           = verdict.Reasons.Select(r => r.Category).Where(c => c.Length > 0).Distinct().ToList(),
                 ["transcript_snippet"]    = NewestQuote(verdict),
-                ["explanation"]           = verdict.Summary,
+                ["explanation"]           = explanation,
                 ["recommended_action"]    = FamilyDashboardContext.EnrichAction(verdict.RecommendedAction, verdict),
-                ["reasons"]               = verdict.Reasons
+                ["reasons"]               = verdict.Reasons,
+                ["manual_stop"]           = knownCaller ? true : null
             };
 
             try
@@ -172,6 +182,51 @@ namespace ScamDetector
                 string? verifyId = parsed.Actions.FirstOrDefault(a => a.Type == "verify_member")?.VerifyId;
                 if (!string.IsNullOrEmpty(verifyId)) VerifyId = verifyId;
                 return (parsed, null);
+            }
+            catch (Exception ex)
+            {
+                return (null, $"Couldn't reach the dashboard: {ex.Message}");
+            }
+        }
+
+        public async Task<(DashboardEventResponse? result, string? error)> SendManualStopAsync(
+            DashboardSettings settings,
+            int chunkIndex,
+            string? transcript,
+            int? durationSeconds,
+            DateTime? startedAtUtc)
+        {
+            if (!settings.Enabled) return (null, "Dashboard sending is turned off.");
+            if (string.IsNullOrEmpty(CallId)) return (null, "No call in progress.");
+
+            var body = new Dictionary<string, object?>
+            {
+                ["id"]           = CallId,
+                ["circle_id"]    = settings.CircleId.Trim(),
+                ["senior_id"]    = settings.SeniorId.Trim(),
+                ["channel"]      = "whatsapp_call",
+                ["caller"]       = "",
+                ["chunk_index"]  = chunkIndex,
+                ["created_at"]   = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                ["started_at"]   = (startedAtUtc ?? DateTime.UtcNow).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                ["duration_s"]   = Math.Max(0, durationSeconds ?? 0),
+                ["transcript"]   = transcript ?? "",
+                ["risk"]         = 0.1,
+                ["explanation"]  = "Recording was stopped manually — the listener recognized the caller.",
+                ["manual_stop"]  = true
+            };
+
+            try
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Post, settings.ApiRoot() + "/events/call_analysis");
+                req.Content = new StringContent(JsonSerializer.Serialize(body, JsonOptions), Encoding.UTF8, "application/json");
+                if (settings.DeviceToken.Trim().Length > 0)
+                    req.Headers.TryAddWithoutValidation("X-Device-Token", settings.DeviceToken.Trim());
+                using var resp = await Http.SendAsync(req);
+                string text = await resp.Content.ReadAsStringAsync();
+                if (!resp.IsSuccessStatusCode)
+                    return (null, $"Dashboard {(int)resp.StatusCode}: {Short(text)}");
+                return (JsonSerializer.Deserialize<DashboardEventResponse>(text), null);
             }
             catch (Exception ex)
             {
