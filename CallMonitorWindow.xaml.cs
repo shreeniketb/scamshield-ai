@@ -27,6 +27,7 @@ namespace ScamDetector
             MainLogic.RecordingStarted += OnRecordingStarted;
             MainLogic.RecordingStopped += OnRecordingStopped;
             MainLogic.VerdictReset     += OnVerdictReset;
+            MainLogic.AiVoiceError     += OnAiVoiceError;
 
             _clock.Tick += (_, _) => UpdateClock();
 
@@ -160,6 +161,18 @@ namespace ScamDetector
             });
         }
 
+        private void OnAiVoiceError(string error)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                TxtAiVoiceResult.Text       = "Could not analyze voice";
+                TxtAiVoiceResult.Foreground = new SolidColorBrush(Color.FromRgb(170, 170, 170));
+                TxtAiVoiceDetail.Text       = error;
+                AiVoiceBorder.BorderBrush   = new SolidColorBrush(Color.FromRgb(120, 120, 120));
+                AiVoiceBorder.Visibility    = Visibility.Visible;
+            });
+        }
+
         private void OnGrokError(string error) =>
             Dispatcher.Invoke(() =>
             {
@@ -212,6 +225,7 @@ namespace ScamDetector
             MainLogic.RecordingStarted -= OnRecordingStarted;
             MainLogic.RecordingStopped -= OnRecordingStopped;
             MainLogic.VerdictReset     -= OnVerdictReset;
+            MainLogic.AiVoiceError     -= OnAiVoiceError;
         }
 
         public void ForceClose() { _forceClose = true; Close(); }

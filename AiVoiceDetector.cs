@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -11,8 +12,21 @@ namespace ScamDetector
         private const string PythonExe =
             @"C:\Users\kales\AppData\Local\Microsoft\WindowsApps\python.exe";
 
-        private const string ProjectRoot =
-            @"C:\Users\kales\OneDrive\Desktop\scamshield-ai";
+        // Current project location
+        private static readonly string ProjectRoot = FindProjectRoot();
+
+        private static string FindProjectRoot()
+        {
+            string[] candidates =
+            {
+                @"C:\Users\kales\VSCode Projects\scamshield main\scamshield-ai",
+                @"C:\Users\kales\OneDrive\Desktop\scamshield-ai",
+                @"C:\Users\kales\Desktop\scamshield-ai"
+            };
+            foreach (var p in candidates)
+                if (Directory.Exists(p)) return p;
+            return candidates[0];
+        }
 
         private static readonly string CheckpointPath =
             Path.Combine(ProjectRoot, "ai_voice_detector", "model", "aasist_epoch_8.pt");
@@ -34,10 +48,9 @@ namespace ScamDetector
                 if (!File.Exists(PythonExe))
                     return Fail($"Python not found at {PythonExe}.");
 
-                // Instead of running detect_ai_voice.py (which has import issues
-                // when copied to bin), we call the package directly with inline Python.
-                // This injects the project root into sys.path so Python always finds
-                // ai_voice_detector as a package.
+                if (!File.Exists(CheckpointPath))
+                    return Fail($"Model not found at {CheckpointPath}. Is ai_voice_detector/ in the project folder?");
+
                 string pythonCode = string.Join("; ", new[]
                 {
                     "import sys",
@@ -49,6 +62,10 @@ namespace ScamDetector
                     "print(json.dumps(r))"
                 });
 
+                // Use temp dir as working directory — always valid, unlike paths
+                // with spaces or OneDrive virtualization that Windows can reject
+                string workDir = Path.GetTempPath();
+
                 var psi = new ProcessStartInfo
                 {
                     FileName               = PythonExe,
@@ -57,8 +74,13 @@ namespace ScamDetector
                     RedirectStandardError  = true,
                     UseShellExecute        = false,
                     CreateNoWindow         = true,
-                    WorkingDirectory       = ProjectRoot
+                    WorkingDirectory       = workDir
                 };
+
+                // Add project root to PYTHONPATH so Python finds ai_voice_detector
+                string existing = Environment.GetEnvironmentVariable("PYTHONPATH") ?? "";
+                psi.EnvironmentVariables["PYTHONPATH"] = string.IsNullOrEmpty(existing)
+                    ? ProjectRoot : $"{ProjectRoot};{existing}";
 
                 using var process = new Process { StartInfo = psi };
                 process.Start();
@@ -67,12 +89,9 @@ namespace ScamDetector
                 string stderr = await process.StandardError.ReadToEndAsync();
                 await Task.Run(() => process.WaitForExit(60_000));
 
-                if (!string.IsNullOrWhiteSpace(stderr))
-                {
-                    // PyTorch prints harmless warnings to stderr — only fail on actual errors
-                    if (string.IsNullOrWhiteSpace(stdout))
-                        return Fail($"Python error: {Trim(stderr)}");
-                }
+                // PyTorch prints harmless warnings to stderr — only fail if no output
+                if (!string.IsNullOrWhiteSpace(stderr) && string.IsNullOrWhiteSpace(stdout))
+                    return Fail($"Python error: {Trim(stderr)}");
 
                 string json = stdout.Trim();
                 if (string.IsNullOrEmpty(json))

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "au9GoJx5nm0=",
+  "dgSpecHash": "Io7v5tfj0kY=",
   "success": true,
-  "projectFilePath": "C:\\Users\\kales\\OneDrive\\Desktop\\scamshield-ai\\ScamDetector.csproj",
+  "projectFilePath": "C:\\Users\\kales\\VSCode Projects\\scamshield main\\scamshield-ai\\ScamDetector.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\kales\\.nuget\\packages\\naudio\\2.4.0\\naudio.2.4.0.nupkg.sha512",
     "C:\\Users\\kales\\.nuget\\packages\\naudio.asio\\2.4.0\\naudio.asio.2.4.0.nupkg.sha512",

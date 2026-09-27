@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ScamDetector")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+807284a2e1314e468abccfccbd9b65d283a0fb60")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4f59d82674a10f4771ea9b4dbacfe80ad5227d10")]
 [assembly: System.Reflection.AssemblyProductAttribute("ScamDetector")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ScamDetector")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

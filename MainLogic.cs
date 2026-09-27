@@ -26,6 +26,7 @@ namespace ScamDetector
         public static event Action<ScamVerdict, string>?           VerdictReady;
         public static event Action<string>?                        VerdictReset;
         public static event Action<AiVoiceDetector.DetectorResult>? AiVoiceReady;
+        public static event Action<string>?                        AiVoiceError;
         public static event Action<string>?                        GrokError;
         public static event Action?                                RecordingStarted;
         public static event Action?                                RecordingStopped;
@@ -310,9 +311,11 @@ namespace ScamDetector
 
                 TimeSpan offset = start - _sessionStart;
                 var transcribeTask = TranscribeAsync(stereoSnap, offset);
-                var aiTask         = File.Exists(aiSnap)
+                bool aiSnapExists = File.Exists(aiSnap);
+                Log($"[AI voice] aiSnap exists={aiSnapExists} path={aiSnap}");
+                var aiTask = aiSnapExists
                     ? AiVoiceDetector.AnalyzeAsync(aiSnap, deleteAfter: false)
-                    : Task.FromResult(new AiVoiceDetector.DetectorResult(0, 0, "UNKNOWN", "Unknown", "No caller audio."));
+                    : Task.FromResult(new AiVoiceDetector.DetectorResult(0, 0, "UNKNOWN", "Unknown", $"No caller audio file at {aiSnap}"));
 
                 await Task.WhenAll(transcribeTask, aiTask);
 
@@ -345,6 +348,7 @@ namespace ScamDetector
                 else
                 {
                     Log($"[AI voice] chunk {thisChunk} error: {aiResult.Error}");
+                    AiVoiceError?.Invoke(aiResult.Error!);
                 }
 
                 // Grok
