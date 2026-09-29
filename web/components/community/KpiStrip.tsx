@@ -54,7 +54,7 @@ export function KpiStrip({ tiles, noun }: { tiles: KpiTile[]; noun: string }) {
         Last {noun} in metro Atlanta
       </h2>
       <p className="mt-1 text-muted">
-        Totals follow this range. Each sparkline is the latest 72 hours of reporting pace, ending on the total.
+        Campaign totals follow this range. Dollars protected counts payments the family declined, so a new call does not move it.
       </p>
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
         {tiles.map((tile) => (

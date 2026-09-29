@@ -233,7 +233,9 @@ export function buildKpis(
   const period = totalReports(campaigns, range, now);
   const ratio = period / week;
   const families = Math.max(1, Math.round(summary.circles_warned_before_exposure * ratio));
-  const dollars = Math.max(0, Math.round(summary.dollars_protected * ratio));
+  // Money is declined payments (plus the demo baseline), not a share of call volume.
+  // Scaling it by the report ratio made this tile jump every time a call was reported.
+  const dollars = Math.max(0, Math.round(summary.dollars_protected));
   const voiceCampaigns = campaigns.filter((campaign) => campaign.channels.includes("voice"));
   const voiceWeek = totalReports(voiceCampaigns, "7d", now) || 1;
   const voicePeriod = totalReports(voiceCampaigns, range, now);
@@ -303,7 +305,17 @@ export function buildKpis(
         startDirection === "flat" ? "" : startDeltaText
       }. ${startCaption}.`,
     },
-    paceTile("dollars", "Dollars protected", dollars, formatMoney(dollars), allTrend, range, noun),
+    {
+      id: "dollars",
+      label: "Dollars protected",
+      value: formatMoney(dollars),
+      spark: Array.from({ length: 24 }, () => dollars),
+      sparkLabel: formatMoney(dollars),
+      direction: "flat",
+      delta: "No change",
+      caption: "Declined payments only. A call does not change this.",
+      spoken: `${formatMoney(dollars)} dollars protected. This counts payments the family declined, not reported calls.`,
+    },
     paceTile(
       "voices",
       "Voice clones caught",
